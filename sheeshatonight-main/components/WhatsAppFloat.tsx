@@ -25,11 +25,13 @@ export default function WhatsAppFloat() {
   }
 
   // Never render WhatsApp floating button on internal dashboards
-  if (
+  const isDashboard =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/admin') ||
-    pathname.startsWith('/vendor')
-  ) {
+    pathname === '/vendor' ||
+    pathname.startsWith('/vendor/');
+
+  if (isDashboard) {
     return null;
   }
 

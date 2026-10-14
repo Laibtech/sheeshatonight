@@ -4,24 +4,16 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function VerticalMarquee() {
-  const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname() || '';
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Prevent SSR rendering of marquee to avoid static build leakage on dashboard routes
-  if (!mounted || !pathname) {
-    return null;
-  }
-
-  // Hide marquee strip on all dashboard routes (/dashboard, /admin, /vendor)
-  if (
+  // Hide marquee strip on internal dashboard routes (/dashboard, /admin, /vendor portal)
+  const isDashboard =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/admin') ||
-    pathname.startsWith('/vendor')
-  ) {
+    pathname === '/vendor' ||
+    pathname.startsWith('/vendor/');
+
+  if (isDashboard) {
     return null;
   }
 

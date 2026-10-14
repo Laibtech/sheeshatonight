@@ -23,12 +23,14 @@ export default function MobileBottomNav() {
   }
 
   // Do not show on internal dashboard / admin / vendor screens
-  if (
+  const isExcluded =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/admin') ||
-    pathname.startsWith('/vendor') ||
-    pathname.startsWith('/checkout')
-  ) {
+    pathname === '/vendor' ||
+    pathname.startsWith('/vendor/') ||
+    pathname.startsWith('/checkout');
+
+  if (isExcluded) {
     return null;
   }
 
