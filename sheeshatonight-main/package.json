@@ -7,11 +7,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "backend": "node backend/server.js"
+    "backend": "node backend/server.js",
+    "start-prod": "npm run build && npm run start",
+    "docker:build": "docker build -t sheeshatonight .",
+    "docker:run": "docker-compose up --build"
   },
   "dependencies": {
     "@prisma/client": "^5.8.0",
@@ -27,21 +30,33 @@
     "jsonwebtoken": "^9.0.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.384.0",
-    "next": "^14.2.0",
+    "minimatch": "^10.2.6",
+    "next": "^16.4.0",
     "prisma": "^5.8.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "tailwindcss": "^3.4.0",
+    "stripe": "^23.0.0",
+    "tailwindcss": "^4.3.3",
     "zod": "^3.22.0",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.19.41",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/parser": "^8.71.1",
     "autoprefixer": "^10.4.0",
+    "eslint": "^10.12.0",
+    "eslint-config-next": "^16.4.0",
     "postcss": "^8.4.0",
     "typescript": "^5.3.0"
+  },
+  "overrides": {
+    "fast-glob": "^3.3.2",
+    "globby": "^13.2.2",
+    "micromatch": "^4.0.8",
+    "braces": "^3.0.3"
   }
 }

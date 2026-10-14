@@ -13,18 +13,32 @@ export function middleware(request: NextRequest) {
   const authToken = request.cookies.get('auth_token')?.value;
   const userRole = request.cookies.get('user_role')?.value;
 
-  // Protected route prefixes that require authentication
-  const protectedPrefixes = ['/admin', '/vendor', '/dashboard', '/checkout'];
-  const isProtectedRoute = protectedPrefixes.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/'));
+  // Specifically identify genuinely protected dashboard/checkout routes
+  // Note: /vendors, /vendors/*, /vendor-profile, /vendor-terms, /vendor-support are PUBLIC storefront pages
+  const isVendorDashboard = pathname === '/vendor' || pathname.startsWith('/vendor/');
+  const isAdminDashboard = pathname === '/admin' || pathname.startsWith('/admin/');
+  const isCustomerDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+  const isCheckout = pathname === '/checkout' || pathname.startsWith('/checkout/');
 
-  // If trying to access a protected route without auth token -> redirect to login
+  const isProtectedRoute = isVendorDashboard || isAdminDashboard || isCustomerDashboard || isCheckout;
+
+  // If trying to access a protected route without auth token -> redirect to login with intended destination
   if (!authToken && isProtectedRoute) {
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // ProtectedRoute component handles authoritative database role verification via /api/auth/me
+  // Strict role-based isolation: Admin area requires ADMIN or SUPER_ADMIN role
+  if (isAdminDashboard) {
+    if (userRole && userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
+  // Note: For /vendor (protected vendor dashboard), requests from authenticated customers
+  // proceed to ProtectedRoute, which presents a clear Access Denied & Vendor Application CTA
+  // rather than an unexpected silent redirect loop.
   return NextResponse.next();
 }
 

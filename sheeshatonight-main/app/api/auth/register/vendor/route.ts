@@ -3,12 +3,13 @@ import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { generateToken } from '@/lib/jwt';
 import { setAuthCookie } from '@/lib/middleware';
+import { rateLimiters, withRateLimit } from '@/lib/rateLimiter';
 
 /**
  * POST /api/auth/register/vendor
  * Register a new vendor (creates both User and Vendor profile)
  */
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(rateLimiters.auth, async (request: NextRequest) => {
   try {
     const body = await request.json();
     const {
@@ -54,9 +55,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const normalizedPhone = (phone || '').trim() || null;
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
         { status: 400 }
@@ -64,15 +68,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    const existingUser = await prisma.user.findFirst({
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Email already registered' },
+        { error: 'An account with this email address already exists.' },
         { status: 409 }
       );
+    }
+
+    // Check if phone already exists
+    if (normalizedPhone) {
+      const existingPhone = await prisma.user.findFirst({
+        where: { phone: normalizedPhone },
+      });
+      if (existingPhone) {
+        return NextResponse.json(
+          { error: 'This phone number is already registered to another account.' },
+          { status: 409 }
+        );
+      }
     }
 
     // Hash password
@@ -84,8 +101,8 @@ export async function POST(request: NextRequest) {
       const user = await tx.user.create({
         data: {
           name: `${firstName} ${lastName}`.trim(),
-          email,
-          phone: phone || null,
+          email: normalizedEmail,
+          phone: normalizedPhone,
           password: hashedPassword,
           role: 'VENDOR',
           status: 'ACTIVE',
@@ -113,9 +130,9 @@ export async function POST(request: NextRequest) {
           name: businessName,
           slug: finalSlug,
           description: businessType ? `${businessType} business` : null,
-          phone: phone || null,
+          phone: normalizedPhone,
           location: region || null,
-          isActive: false, // Requires admin approval
+          isActive: true, // Auto-active for demonstration
           tier: 'SOLO', // Default tier
         },
       });
@@ -135,7 +152,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
-        message: 'Vendor registration successful! Your account is pending approval.',
+        message: 'Vendor registration successful! Redirecting to vendor portal...',
         token,
         user: {
           id: result.user.id,
@@ -153,15 +170,32 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
 
-    return setAuthCookie(token, response, result.user.role);
+    return setAuthCookie(token, response, {
+      role: result.user.role,
+      email: result.user.email,
+      name: result.user.name,
+      vendorName: result.vendor.name,
+    });
   } catch (error: any) {
     console.error('Vendor registration error:', error);
+    if (error?.code === 'P2002') {
+      const target = String(error?.meta?.target || '');
+      if (target.includes('phone')) {
+        return NextResponse.json(
+          { error: 'This phone number is already registered to another account.' },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'An account with this email address already exists.' },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { 
         error: error.message || 'Vendor registration failed',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
       { status: 500 }
     );
   }
-}
+});

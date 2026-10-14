@@ -2,6 +2,8 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
 import {
   Search,
@@ -59,15 +61,12 @@ export default function ShopPage() {
   const [sort, setSort] = useState("featured");
   const [maxPrice, setMaxPrice] = useState(1000);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
   const [mobileFilters, setMobileFilters] = useState(false);
   const [wishlist, setWishlist] = useState<(string | number)[]>([]);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addedAnimationId, setAddedAnimationId] = useState<string | number | null>(null);
   const [viewOnlyWishlist, setViewOnlyWishlist] = useState(false);
-  const [shopOpen, setShopOpen] = useState(false);
-  const [rentalsOpen, setRentalsOpen] = useState(false);
 
   // Fetch live products from backend MySQL database
   useEffect(() => {
@@ -109,8 +108,8 @@ export default function ShopPage() {
           });
           setDbProducts(mapped);
         }
-      } catch (e) {
-        console.error("Error loading live products:", e);
+      } catch {
+        // Fallback gracefully without console error
       } finally {
         setLoadingProducts(false);
       }
@@ -172,11 +171,10 @@ export default function ShopPage() {
       if (ok) {
         setAddedAnimationId(product.id);
         setTimeout(() => setAddedAnimationId(null), 1800);
-        showToast(`Added ${quantity}x "${product.name}" to cart! 🛒`);
+        showToast(`Added ${quantity}x "${product.name}" to cart!`);
       }
-    } catch (e) {
-      console.error("Error adding to cart:", e);
-      showToast(`Added to cart! 🛒`);
+    } catch {
+      showToast(`Added to cart!`);
     }
   };
 
@@ -252,7 +250,9 @@ export default function ShopPage() {
   ]);
 
   return (
-    <main className="shop-page">
+    <>
+      <Header />
+      <main className="shop-page" suppressHydrationWarning>
       {/* Toast Notification */}
       {toastMessage && (
         <div className="toast-notification">
@@ -266,332 +266,7 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* Announcement */}
-      <div className="announcement">
-        <div className="announcement-content">
-          <span>
-            <Sparkles size={13} className="inline-block mr-1 text-[#F1A51D]" />
-            Premium Sheesha Experiences Across the UAE
-          </span>
-          <span className="separator">|</span>
-          <span className="bold">Same-Day VIP Delivery in Dubai & Abu Dhabi</span>
-        </div>
-      </div>
 
-      {/* Header */}
-      <header className="shop-header">
-        <div className="header-inner">
-          <Link href="/" className="logo-wrap" title="SheeshaTonight UAE">
-            <img src="/logo.png" alt="SheeshaTonight" style={{ width: "125px", height: "auto", display: "block" }} />
-          </Link>
-
-          <nav className="desktop-nav">
-            <Link href="/">HOME</Link>
-
-            <div
-              className="relative"
-              onMouseEnter={() => setShopOpen(true)}
-              onMouseLeave={() => setShopOpen(false)}
-            >
-              <Link
-                href="/shop"
-                className="active flex items-center gap-1.5 text-[13px] font-semibold text-gray-700 hover:text-[#74189B]"
-              >
-                SHOP
-                <ChevronDown size={14} />
-              </Link>
-
-              {shopOpen && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-full pt-4 z-[100]">
-                  <div className="w-[700px] bg-white rounded-2xl border border-gray-100 shadow-[0_20px_60px_rgba(0,0,0,.12)] p-7 text-left">
-                    <div className="grid grid-cols-3 gap-8">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[2px] text-[#F1A51D] font-bold mb-4">
-                          Shop Sheesha
-                        </p>
-
-                        <div className="space-y-3">
-                          <Link
-                            href="/categories/buy-sheesha"
-                            className="flex justify-between items-center group"
-                          >
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-[#74189B]">
-                              Buy Sheesha
-                            </span>
-                            <ChevronRight size={15} />
-                          </Link>
-
-                          <Link
-                            href="/categories/flavors"
-                            className="flex justify-between items-center group"
-                          >
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-[#74189B]">
-                              Sheesha Flavors
-                            </span>
-                            <ChevronRight size={15} />
-                          </Link>
-
-                          <Link
-                            href="/categories/accessories"
-                            className="flex justify-between items-center group"
-                          >
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-[#74189B]">
-                              Accessories
-                            </span>
-                            <ChevronRight size={15} />
-                          </Link>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[2px] text-[#F1A51D] font-bold mb-4">
-                          Featured
-                        </p>
-
-                        <div className="space-y-3">
-                          <Link
-                            href="/shop"
-                            onClick={() => {
-                              setViewOnlyWishlist(false);
-                              setCategory("All Products");
-                              setSort("popular");
-                              setShopOpen(false);
-                            }}
-                            className="flex justify-between items-center group"
-                          >
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-[#74189B]">
-                              Best Sellers
-                            </span>
-                            <ChevronRight size={15} />
-                          </Link>
-
-                          <Link
-                            href="/shop?sort=newest"
-                            onClick={() => {
-                              setViewOnlyWishlist(false);
-                              setCategory("All Products");
-                              setSort("newest");
-                              setShopOpen(false);
-                            }}
-                            className="flex justify-between items-center group"
-                          >
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-[#74189B]">
-                              New Arrivals
-                            </span>
-                            <ChevronRight size={15} />
-                          </Link>
-
-                          <Link
-                            href="/shop?sale=true"
-                            onClick={() => {
-                              setViewOnlyWishlist(false);
-                              setCategory("All Products");
-                              setShopOpen(false);
-                            }}
-                            className="flex justify-between items-center group"
-                          >
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-[#74189B]">
-                              Special Offers
-                            </span>
-                            <ChevronRight size={15} />
-                          </Link>
-                        </div>
-                      </div>
-
-                      <div className="bg-[#F8F2FA] rounded-xl p-5">
-                        <span className="text-[10px] uppercase tracking-[2px] text-[#74189B] font-bold">
-                          Premium Collection
-                        </span>
-
-                        <h3 className="mt-2 text-lg font-bold text-[#571275]">
-                          Elevate Your Setup
-                        </h3>
-
-                        <p className="text-xs text-gray-500 mt-2 leading-5">
-                          Discover premium sheesha products, flavors and
-                          accessories.
-                        </p>
-
-                        <Link
-                          href="/shop"
-                          onClick={() => {
-                            setViewOnlyWishlist(false);
-                            setCategory("All Products");
-                            setShopOpen(false);
-                          }}
-                          className="inline-flex items-center gap-1 mt-4 text-xs font-bold text-[#74189B]"
-                        >
-                          Shop Collection
-                          <ChevronRight size={14} />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div
-              className="relative"
-              onMouseEnter={() => setRentalsOpen(true)}
-              onMouseLeave={() => setRentalsOpen(false)}
-            >
-              <Link
-                href="/rentals"
-                className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-700 hover:text-[#74189B]"
-              >
-                RENTALS
-                <ChevronDown size={14} />
-              </Link>
-
-              {rentalsOpen && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-full pt-4 z-[100]">
-                  <div className="w-[650px] bg-white rounded-2xl border border-gray-100 shadow-[0_20px_60px_rgba(0,0,0,.12)] p-7 text-left">
-                    <div className="grid grid-cols-2 gap-8">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[2px] text-[#F1A51D] font-bold mb-4">
-                          Rent For
-                        </p>
-
-                        <div className="space-y-3">
-                          {[
-                            { name: "Villa", href: "/rentals?event=villa" },
-                            { name: "Yacht", href: "/rentals?event=yacht" },
-                            { name: "Corporate", href: "/rentals?event=corporate" },
-                            { name: "Weddings", href: "/rentals?event=weddings" },
-                            { name: "Birthdays", href: "/rentals?event=birthday" },
-                            { name: "Private Gatherings", href: "/rentals?event=private" },
-                          ].map(({ name, href }) => (
-                            <Link
-                              key={name}
-                              href={href}
-                              className="flex items-center justify-between text-sm font-medium text-gray-700 hover:text-[#74189B]"
-                            >
-                              <span>{name}</span>
-                              <ChevronRight size={15} />
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl overflow-hidden min-h-[230px] relative">
-                        <img
-                          src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=700&q=85"
-                          alt="Sheesha experience"
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
-
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#571275]/90 via-[#571275]/20 to-transparent" />
-
-                        <div className="absolute bottom-5 left-5 right-5 text-white">
-                          <p className="text-[10px] uppercase tracking-[2px] text-[#F1A51D] font-bold">
-                            Premium Experiences
-                          </p>
-
-                          <h3 className="text-xl font-bold mt-1">
-                            Rent. Relax. Enjoy.
-                          </h3>
-
-                          <Link
-                            href="/rentals"
-                            className="inline-flex items-center gap-1 mt-3 text-xs font-semibold"
-                          >
-                            Explore Rentals
-                            <ChevronRight size={14} />
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <Link href="/experiences">EXPERIENCES</Link>
-            <Link href="/vendors">VENDORS</Link>
-            <Link href="/about">ABOUT</Link>
-            <Link href="/contact">CONTACT</Link>
-          </nav>
-
-          <div className="header-actions">
-            {/* Search Button & Input */}
-            <div className="search-box-wrap">
-              {searchOpen ? (
-                <div className="search-expanded">
-                  <Search size={16} className="search-icon" />
-                  <input
-                    type="text"
-                    placeholder="Search sheeshas, flavors, vendors..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    autoFocus
-                  />
-                  <button
-                    onClick={() => {
-                      setSearchOpen(false);
-                      setSearchQuery("");
-                    }}
-                    className="close-search"
-                    aria-label="Close search"
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  aria-label="Search"
-                  className="action-btn"
-                  onClick={() => setSearchOpen(true)}
-                  title="Search products"
-                >
-                  <Search size={20} />
-                </button>
-              )}
-            </div>
-
-            {/* Wishlist Button */}
-            <button
-              aria-label="Wishlist"
-              className={`action-btn wishlist-header-btn ${
-                viewOnlyWishlist ? "active" : ""
-              }`}
-              onClick={() => setViewOnlyWishlist(!viewOnlyWishlist)}
-              title={
-                viewOnlyWishlist
-                  ? "Show all products"
-                  : `Show wishlist (${wishlist.length})`
-              }
-            >
-              <Heart
-                size={20}
-                fill={viewOnlyWishlist ? "#74189b" : "none"}
-                color={viewOnlyWishlist ? "#74189b" : "currentColor"}
-              />
-              {wishlist.length > 0 && (
-                <span className="badge-count wishlist-count">
-                  {wishlist.length}
-                </span>
-              )}
-            </button>
-
-            {/* Account Link */}
-            <Link
-              href="/dashboard"
-              aria-label="Account"
-              className="action-btn"
-              title="Customer Dashboard"
-            >
-              <User size={20} />
-            </Link>
-
-            {/* Cart Link */}
-            <Link href="/cart" className="action-btn cart-link" title="Shopping Cart">
-              <ShoppingCart size={20} />
-              <span className="badge-count cart-count">{itemCount}</span>
-            </Link>
-          </div>
-        </div>
-      </header>
 
       {/* Hero */}
       <section className="shop-hero">
@@ -603,23 +278,30 @@ export default function ShopPage() {
                 SHEESHATONIGHT EXCLUSIVE SHOP
               </span>
               <h1>Premium Sheesha, Products for Every Vibe</h1>
-              <p>
+              <p
+                className="hero-desc"
+                style={{
+                  color: "rgba(255, 255, 255, 0.92)",
+                  fontSize: "16px",
+                  lineHeight: 1.65,
+                }}
+              >
                 Discover luxury handcrafted sheeshas, rich tobacco flavors, and
                 authentic accessories from vetted UAE lounges and artisanal vendors.
               </p>
 
               <div className="hero-trust">
-                <span className="trust-item">
-                  <ShieldCheck size={16} className="text-[#F1A51D]" />
-                  100% Verified UAE Vendors
+                <span className="trust-item" style={{ color: '#ffffff' }}>
+                  <ShieldCheck size={16} color="#F1A51D" className="flex-shrink-0" />
+                  <span style={{ color: '#ffffff', fontWeight: 600 }}>100% Verified UAE Vendors</span>
                 </span>
-                <span className="trust-item">
-                  <Sparkles size={16} className="text-[#F1A51D]" />
-                  Artisanal Premium Quality
+                <span className="trust-item" style={{ color: '#ffffff' }}>
+                  <Sparkles size={16} color="#F1A51D" className="flex-shrink-0" />
+                  <span style={{ color: '#ffffff', fontWeight: 600 }}>Artisanal Premium Quality</span>
                 </span>
-                <span className="trust-item">
-                  <Truck size={16} className="text-[#F1A51D]" />
-                  Fast UAE-Wide Express Delivery
+                <span className="trust-item" style={{ color: '#ffffff' }}>
+                  <Truck size={16} color="#F1A51D" className="flex-shrink-0" />
+                  <span style={{ color: '#ffffff', fontWeight: 600 }}>Fast UAE-Wide Express Delivery</span>
                 </span>
               </div>
             </div>
@@ -1142,54 +824,8 @@ export default function ShopPage() {
         </Link>
       </section>
 
-      {/* Footer */}
-      <footer className="shop-footer">
-        <div className="container footer-grid">
-          <div className="footer-brand">
-            <img src="/logo.png" alt="SheeshaTonight" style={{ width: "125px", height: "auto", display: "block" }} />
-            <p>
-              The UAE’s premier digital marketplace for luxury sheeshas, premium
-              flavors, and white-glove event sommelier rentals.
-            </p>
-            <div className="footer-badges">
-              <span>🇦🇪 Licensed in Dubai & UAE</span>
-              <span>🔒 100% Encrypted Checkout</span>
-            </div>
-          </div>
-
-          <div>
-            <h4>Shop Marketplace</h4>
-            <Link href="/shop">All Products</Link>
-            <Link href="/shop">Buy Sheesha</Link>
-            <Link href="/shop">Shisha Flavors</Link>
-            <Link href="/shop">Complete Setups</Link>
-            <Link href="/shop">Accessories</Link>
-          </div>
-
-          <div>
-            <h4>VIP Rentals</h4>
-            <Link href="/rentals">Private Villa Service</Link>
-            <Link href="/rentals">Luxury Yacht Setups</Link>
-            <Link href="/rentals">Corporate Events</Link>
-            <Link href="/rentals">Weddings & Galas</Link>
-          </div>
-
-          <div>
-            <h4>Support & Legal</h4>
-            <Link href="/contact">Help Center & Contact</Link>
-            <Link href="/faqs">Frequently Asked Questions</Link>
-            <Link href="/privacy">Privacy Policy</Link>
-            <Link href="/terms">Terms of Service</Link>
-          </div>
-        </div>
-
-        <div className="footer-bottom">
-          <div className="container footer-bottom-flex">
-            <span>© 2026 SheeshaTonight UAE. All rights reserved.</span>
-            <span>18+ Age Verification Strictly Enforced | Dubai, United Arab Emirates</span>
-          </div>
-        </div>
-      </footer>
+      {/* Unified Global Footer */}
+      <Footer />
 
       <style jsx global>{`
         * {
@@ -1511,9 +1147,9 @@ export default function ShopPage() {
               rgba(62, 10, 84, 0.95) 0%,
               rgba(116, 24, 155, 0.85) 60%,
               rgba(116, 24, 155, 0.7) 100%
-            ),
+          ),
             url("/SHOP-BANNER.webp") center/cover no-repeat;
-          min-height: 440px;
+          min-height: 340px;
           display: flex;
           align-items: center;
           overflow: hidden;
@@ -1521,7 +1157,7 @@ export default function ShopPage() {
 
         .shop-hero .hero-overlay {
           width: 100%;
-          padding: 80px 0;
+          padding: 44px 0;
           display: flex;
           align-items: center;
         }
@@ -1551,31 +1187,42 @@ export default function ShopPage() {
           font-weight: 800;
         }
 
-        .hero-content p {
+        .shop-hero .hero-content p,
+        .hero-content p,
+        .hero-desc {
           max-width: 620px;
           line-height: 1.65;
-          font-size: 15px;
-          opacity: 0.94;
+          font-size: 16px;
+          color: rgba(255, 255, 255, 0.92) !important;
+          opacity: 1;
           margin: 0;
         }
 
         .hero-trust {
           display: flex;
-          gap: 28px;
+          gap: 16px;
           flex-wrap: wrap;
           margin-top: 26px;
-          font-size: 12.5px;
+          font-size: 13px;
           font-weight: 600;
+          color: #ffffff;
         }
 
         .trust-item {
           display: flex;
           align-items: center;
-          gap: 7px;
-          background: rgba(255, 255, 255, 0.1);
-          padding: 6px 14px;
-          border-radius: 20px;
-          backdrop-filter: blur(4px);
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.14);
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          padding: 7px 16px;
+          border-radius: 24px;
+          backdrop-filter: blur(8px);
+          color: #ffffff !important;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+        }
+
+        .trust-item span {
+          color: #ffffff !important;
         }
 
         /* Category Strip */
@@ -1583,8 +1230,8 @@ export default function ShopPage() {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 16px;
-          padding-top: 36px;
-          padding-bottom: 40px;
+          padding-top: 24px;
+          padding-bottom: 24px;
         }
 
         .category-card {
@@ -1726,7 +1373,7 @@ export default function ShopPage() {
         .shop-layout {
           display: grid;
           grid-template-columns: 250px 1fr;
-          gap: 34px;
+          gap: 26px;
           align-items: start;
         }
 
@@ -1828,8 +1475,8 @@ export default function ShopPage() {
         /* Products Grid */
         .product-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 22px;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 16px;
         }
 
         .product-card {
@@ -1849,7 +1496,7 @@ export default function ShopPage() {
         }
 
         .product-image {
-          height: 275px;
+          height: 215px;
           background: #f8f6f9;
           position: relative;
           overflow: hidden;
@@ -1940,7 +1587,7 @@ export default function ShopPage() {
         }
 
         .product-info {
-          padding: 16px 18px 18px;
+          padding: 14px 16px 16px;
           display: flex;
           flex-direction: column;
           flex: 1;
@@ -1951,9 +1598,9 @@ export default function ShopPage() {
           align-items: center;
           gap: 4px;
           color: #f1a51d;
-          font-size: 12px;
+          font-size: 11.5px;
           font-weight: 750;
-          margin-bottom: 7px;
+          margin-bottom: 6px;
         }
 
         .rating small {
@@ -1963,13 +1610,18 @@ export default function ShopPage() {
         }
 
         .product-name {
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 750;
           color: #262128;
           line-height: 1.35;
-          margin: 0 0 6px;
+          margin: 0 0 5px;
           cursor: pointer;
           transition: color 0.18s;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          min-height: 38px;
         }
 
         .product-name:hover {
@@ -1982,7 +1634,7 @@ export default function ShopPage() {
           gap: 5px;
           color: #807a83;
           font-size: 11.5px;
-          margin: 0 0 16px;
+          margin: 0 0 10px;
         }
 
         .vendor-check {
@@ -1993,9 +1645,9 @@ export default function ShopPage() {
           display: flex;
           align-items: flex-end;
           justify-content: space-between;
-          gap: 10px;
+          gap: 8px;
           margin-top: auto;
-          padding-top: 14px;
+          padding-top: 10px;
           border-top: 1px solid #f2edf3;
         }
 
@@ -2448,6 +2100,13 @@ export default function ShopPage() {
         }
 
         /* Responsive Breakpoints */
+        @media (max-width: 1260px) {
+          .product-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+          }
+        }
+
         @media (max-width: 1100px) {
           .desktop-nav {
             gap: 18px;
@@ -2459,11 +2118,12 @@ export default function ShopPage() {
 
           .shop-layout {
             grid-template-columns: 220px 1fr;
-            gap: 24px;
+            gap: 20px;
           }
 
           .product-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
           }
 
           .modal-grid {
@@ -2592,7 +2252,7 @@ export default function ShopPage() {
           }
 
           .product-image {
-            height: 220px;
+            height: 185px;
           }
 
           .product-info {
@@ -2601,6 +2261,7 @@ export default function ShopPage() {
 
           .product-name {
             font-size: 13.5px;
+            min-height: 36px;
           }
 
           .product-bottom {
@@ -2656,11 +2317,30 @@ export default function ShopPage() {
           }
 
           .product-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
           }
 
           .product-image {
-            height: 240px;
+            height: 150px;
+          }
+
+          .product-info {
+            padding: 10px;
+          }
+
+          .product-name {
+            font-size: 12px;
+            min-height: 32px;
+          }
+
+          .current-price {
+            font-size: 14px;
+          }
+
+          .add-cart-btn {
+            padding: 7px 8px;
+            font-size: 10px;
           }
 
           .footer-grid {
@@ -2669,6 +2349,7 @@ export default function ShopPage() {
         }
       `}</style>
     </main>
+    </>
   );
 }
 

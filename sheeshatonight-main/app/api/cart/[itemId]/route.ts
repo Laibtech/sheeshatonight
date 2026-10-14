@@ -95,29 +95,12 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest, context: RouteC
 
     const { itemId } = context.params;
 
-    // Find cart item
-    const cartItem = await prisma.cart.findUnique({
-      where: { id: itemId },
-    });
-
-    if (!cartItem) {
-      return NextResponse.json(
-        { success: false, error: 'Cart item not found' },
-        { status: 404 }
-      );
-    }
-
-    // Verify ownership
-    if (cartItem.userId !== userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 403 }
-      );
-    }
-
-    // Delete item
-    await prisma.cart.delete({
-      where: { id: itemId },
+    // Delete item atomically using deleteMany (safe against race conditions & double clicks)
+    await prisma.cart.deleteMany({
+      where: {
+        id: itemId,
+        userId: userId,
+      },
     });
 
     return NextResponse.json({

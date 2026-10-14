@@ -8,11 +8,12 @@ import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from 
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
 ) {
+  const resolvedParams = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { orderId } = params;
+      const { orderId } = resolvedParams;
 
       const order = await prisma.order.findUnique({
         where: { id: orderId },
@@ -101,11 +102,12 @@ export async function GET(
  */
 async function handleUpdateStatus(
   request: NextRequest,
-  params: { orderId: string }
+  params: Promise<{ orderId: string }> | { orderId: string }
 ) {
+  const resolvedParams = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { orderId } = params;
+      const { orderId } = resolvedParams;
       const body = await req.json();
       const { status, payoutStatus, trackingNote } = body;
 
@@ -185,14 +187,21 @@ async function handleUpdateStatus(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
+) {
+  return handleUpdateStatus(request, params);
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
 ) {
   return handleUpdateStatus(request, params);
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> | { orderId: string } }
 ) {
   return handleUpdateStatus(request, params);
 }

@@ -19,8 +19,9 @@ function extractTokenFromReq(request: Request): string | null {
  * GET /api/users/me/addresses/[addressId]
  * Get specific address
  */
-export async function GET(request: Request, { params }: { params: { addressId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ addressId: string }> | { addressId: string } }) {
   try {
+    const { addressId } = await params;
     const token = extractTokenFromReq(request);
 
     if (!token || !verifyToken(token)) {
@@ -35,7 +36,7 @@ export async function GET(request: Request, { params }: { params: { addressId: s
     const userId = user.id;
 
     const address = await prisma.address.findUnique({
-      where: { id: params.addressId },
+      where: { id: addressId },
     });
 
     if (!address) {
@@ -60,8 +61,9 @@ export async function GET(request: Request, { params }: { params: { addressId: s
  * PUT /api/users/me/addresses/[addressId]
  * Update address
  */
-export async function PUT(request: Request, { params }: { params: { addressId: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ addressId: string }> | { addressId: string } }) {
   try {
+    const { addressId } = await params;
     const token = extractTokenFromReq(request);
 
     if (!token || !verifyToken(token)) {
@@ -76,7 +78,7 @@ export async function PUT(request: Request, { params }: { params: { addressId: s
     const userId = user.id;
 
     const address = await prisma.address.findUnique({
-      where: { id: params.addressId },
+      where: { id: addressId },
     });
 
     if (!address) {
@@ -101,7 +103,7 @@ export async function PUT(request: Request, { params }: { params: { addressId: s
     // If setting as default, unset other defaults
     if (validation.data.isDefault) {
       await prisma.address.updateMany({
-        where: { userId, id: { not: params.addressId }, isDefault: true },
+        where: { userId, id: { not: addressId }, isDefault: true },
         data: { isDefault: false },
       });
     }
@@ -116,7 +118,7 @@ export async function PUT(request: Request, { params }: { params: { addressId: s
     if (validation.data.isDefault !== undefined) updateData.isDefault = validation.data.isDefault;
 
     const updatedAddress = await prisma.address.update({
-      where: { id: params.addressId },
+      where: { id: addressId },
       data: updateData,
     });
 
@@ -134,8 +136,9 @@ export async function PUT(request: Request, { params }: { params: { addressId: s
  * DELETE /api/users/me/addresses/[addressId]
  * Delete address
  */
-export async function DELETE(request: Request, { params }: { params: { addressId: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ addressId: string }> | { addressId: string } }) {
   try {
+    const { addressId } = await params;
     const token = extractTokenFromReq(request);
 
     if (!token || !verifyToken(token)) {
@@ -150,7 +153,7 @@ export async function DELETE(request: Request, { params }: { params: { addressId
     const userId = user.id;
 
     const address = await prisma.address.findUnique({
-      where: { id: params.addressId },
+      where: { id: addressId },
     });
 
     if (!address) {
@@ -162,7 +165,7 @@ export async function DELETE(request: Request, { params }: { params: { addressId
     }
 
     await prisma.address.delete({
-      where: { id: params.addressId },
+      where: { id: addressId },
     });
 
     return NextResponse.json(

@@ -3,7 +3,7 @@
  * Provides utility functions for making authenticated API requests
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 interface ApiResponse<T = any> {
   success?: boolean;

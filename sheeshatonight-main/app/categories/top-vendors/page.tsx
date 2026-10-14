@@ -82,7 +82,7 @@ export default function TopVendorsPage() {
       <Header />
       <main className="category-page">
         {/* HERO */}
-        <section className="category-hero">
+        <section className="category-hero hero-top-vendors">
           <div className="category-hero-content">
             <Link href="/" className="category-back-link">
               ← Back to Home

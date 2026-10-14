@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Lock,
+  CreditCard,
 } from 'lucide-react';
 import './checkout.css';
 
@@ -127,6 +128,22 @@ export default function CheckoutPage() {
     setProcessing(true);
 
     try {
+      if (paymentMethod === 'CARD') {
+        const stripeRes = await fetch('/api/payments/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const stripeData = await stripeRes.json();
+        if (stripeData.success && stripeData.url) {
+          window.location.href = stripeData.url;
+          return;
+        } else {
+          alert(stripeData.error || 'Online card payment gateway is currently offline. Please use Cash on Delivery.');
+          setProcessing(false);
+          return;
+        }
+      }
+
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
@@ -323,7 +340,24 @@ export default function CheckoutPage() {
                       <Wallet size={24} />
                       <div>
                         <h3>Cash on Delivery</h3>
-                        <p>Pay when you receive your order</p>
+                        <p>Pay with cash or card upon delivery</p>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className={`payment-option ${paymentMethod === 'CARD' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="CARD"
+                      checked={paymentMethod === 'CARD'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                    />
+                    <div className="payment-content">
+                      <CreditCard size={24} />
+                      <div>
+                        <h3>Credit / Debit Card (Online)</h3>
+                        <p>Secure payment powered by Stripe</p>
                       </div>
                     </div>
                   </label>

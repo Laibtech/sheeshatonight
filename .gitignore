@@ -3,8 +3,12 @@ node_modules/
 dist/
 build/
 *.env*
+.env*
 .DS_Store
 .vscode/
 .idea/
 *.log
 .vercel
+backups/
+*.bak
+

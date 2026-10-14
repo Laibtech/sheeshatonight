@@ -130,6 +130,10 @@ export default function VendorDashboardPage() {
       const result = await res.json();
       if (result.success && result.data) {
         setData(result.data);
+        if (result.data.vendor?.name) {
+          localStorage.setItem('vendor_name', result.data.vendor.name);
+          window.dispatchEvent(new CustomEvent('vendor_profile_updated', { detail: { name: result.data.vendor.name } }));
+        }
       }
     } catch (err) {
       console.error('Failed to load vendor dashboard:', err);
@@ -188,7 +192,7 @@ export default function VendorDashboardPage() {
             )}
           </div>
           <p className="text-slate-500 text-sm mt-1">
-            Manage your store ({vendor?.name || 'Royal Sheesha Lounge'}), products, orders, earnings and customer activity.
+            Manage your store ({vendor?.name || 'Your Store'}), products, orders, earnings and customer activity.
           </p>
         </div>
 

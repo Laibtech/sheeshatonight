@@ -7,6 +7,10 @@ import { generateToken } from '@/lib/jwt';
  * Developer / QA helper route to switch active authentication session in browser
  */
 export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DEV_SWITCH !== 'true') {
+    return NextResponse.json({ error: 'Dev switch is disabled in production' }, { status: 403 });
+  }
+
   const { searchParams } = new URL(request.url);
   const role = (searchParams.get('role') || 'ADMIN').toUpperCase();
   const email = searchParams.get('email');
@@ -64,11 +68,12 @@ export async function GET(request: NextRequest) {
     localStorage.setItem('auth_token', ${JSON.stringify(token)});
     localStorage.setItem('user_role', ${JSON.stringify(user.role)});
     localStorage.setItem('user_name', ${JSON.stringify(user.name)});
-    ${vendor ? `localStorage.setItem('vendor_name', ${JSON.stringify(vendor.name)});` : ''}
+    ${vendor ? `localStorage.setItem('vendor_name', ${JSON.stringify(vendor.name)});` : `localStorage.removeItem('vendor_name');`}
     document.cookie = 'auth_token=' + encodeURIComponent(${JSON.stringify(token)}) + '; path=/; max-age=604800;';
     document.cookie = 'user_role=' + encodeURIComponent(${JSON.stringify(user.role)}) + '; path=/; max-age=604800;';
     document.cookie = 'user_email=' + encodeURIComponent(${JSON.stringify(user.email)}) + '; path=/; max-age=604800;';
     document.cookie = 'user_name=' + encodeURIComponent(${JSON.stringify(user.name)}) + '; path=/; max-age=604800;';
+    ${vendor ? `document.cookie = 'vendor_name=' + encodeURIComponent(${JSON.stringify(vendor.name)}) + '; path=/; max-age=604800;';` : `document.cookie = 'vendor_name=; path=/; max-age=0;';`}
     window.location.replace(${JSON.stringify(redirectTo)});
   </script>
 </body>

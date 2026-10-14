@@ -334,7 +334,7 @@ export default function VendorProductsPage() {
                 ) : (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-400">
-                      No products found. Click "Add New Product" to create your first product.
+                      No products found. Click &quot;Add New Product&quot; to create your first product.
                     </td>
                   </tr>
                 )}

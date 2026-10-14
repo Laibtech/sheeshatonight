@@ -24,21 +24,90 @@
    HERO SECTION - IDENTICAL ACROSS ALL PAGES
    ============================================================================= */
 .category-hero {
-  min-height: 500px;
-  overflow: visible;
-  background: radial-gradient(circle at 60% 55%, rgba(192, 130, 218, 0.14), transparent 30%),
-    linear-gradient(110deg, #fff 55%, #fbf5fb);
+  position: relative;
+  min-height: 380px;
+  overflow: hidden;
+  background: radial-gradient(circle at 80% 50%, rgba(192, 130, 218, 0.14), transparent 50%),
+    linear-gradient(110deg, #ffffff 40%, #fbf5fb 100%);
+}
+
+/* Background hero image layer on the right side */
+.category-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 52%;
+  max-width: 800px;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.96;
+  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 100%);
+  transition: opacity 0.4s ease;
+}
+
+/* Soft white feathering gradient across the hero for guaranteed crisp text readability */
+.category-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.98) 38%,
+    rgba(255, 255, 255, 0.72) 55%,
+    rgba(255, 255, 255, 0.12) 78%,
+    transparent 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Category Specific Background Images */
+.category-hero.hero-flavors::before {
+  background-image: url("/Categories/flavor.webp");
+  background-position: center 38%;
+}
+
+.category-hero.hero-accessories::before {
+  background-image: url("/Categories/Accessories.webp");
+  background-position: center center;
+}
+
+.category-hero.hero-buy-sheesha::before {
+  background-image: url("/Categories/Buy%20Sheesha.webp");
+  background-position: center 25%;
+}
+
+.category-hero.hero-rentals::before {
+  background-image: url("/Categories/Rentals.webp");
+  background-position: center 30%;
+}
+
+.category-hero.hero-sheesha-setups::before {
+  background-image: url("/Categories/Sheesha%20Setups.webp");
+  background-position: center 30%;
+}
+
+.category-hero.hero-top-vendors::before {
+  background-image: url("/Categories/Top%20Vendors.webp");
+  background-position: center 42%;
 }
 
 .category-hero-content {
   width: 92%;
   max-width: 1440px;
   margin: auto;
-  min-height: 500px;
+  min-height: 380px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 80px 0;
+  padding: 44px 0;
   position: relative;
   z-index: 2;
 }
@@ -78,15 +147,17 @@
   line-height: 1.15;
   font-weight: 700;
   letter-spacing: -2px;
+  color: #211D24;
   overflow: visible;
 }
 
 .category-hero h1 em {
   font-style: italic;
-  background: linear-gradient(90deg, #74189b, #f1a51d);
+  background: linear-gradient(90deg, #74189b 0%, #f1a51d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  display: inline;
 }
 
 /* Hero Description */
@@ -636,12 +707,23 @@
 /* Mobile */
 @media (max-width: 768px) {
   .category-hero {
-    min-height: 400px;
+    min-height: 360px;
+  }
+
+  .category-hero::before {
+    width: 100%;
+    opacity: 0.22;
+    -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
+    mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
+  }
+
+  .category-hero::after {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
   }
 
   .category-hero-content {
-    min-height: 400px;
-    padding: 50px 0;
+    min-height: 360px;
+    padding: 44px 0;
   }
 
   .category-hero h1 {
@@ -728,29 +810,4 @@
   .category-card-info {
     padding: 12px;
   }
-}
-
-/* Match the shared public hero direction used across the marketplace. */
-.category-hero {
-  min-height: 420px;
-  background:
-    radial-gradient(circle at 15% 25%, rgba(212, 175, 55, 0.16), transparent 28%),
-    linear-gradient(115deg, #111 0%, #211f1a 55%, #f7f5f0 55%, #fff);
-}
-
-.category-hero-content {
-  min-height: 420px;
-  padding: 100px 0 72px;
-}
-
-.category-eyebrow {
-  color: #D4AF37;
-}
-
-.category-hero h1 {
-  color: #fff;
-}
-
-.category-hero h1 em {
-  background: linear-gradient(90deg, #D4AF37, #f3d77a);
 }

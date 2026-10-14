@@ -317,7 +317,7 @@ export default function ExperiencesPage() {
 
         .hero-overlay {
           width: 100%;
-          padding: 100px 0;
+          padding: 60px 0;
           display: flex;
           align-items: center;
         }
@@ -387,7 +387,7 @@ export default function ExperiencesPage() {
         .categories-section,
         .featured-section,
         .trust-section {
-          padding: 110px 0;
+          padding: 48px 0;
         }
 
         .categories-section {
@@ -588,7 +588,7 @@ export default function ExperiencesPage() {
         }
 
         .final-cta {
-          padding: 110px 20px;
+          padding: 56px 20px;
           text-align: center;
           background: #f4eafa;
         }
@@ -634,11 +634,11 @@ export default function ExperiencesPage() {
 
         @media (max-width: 640px) {
           .experience-hero {
-            min-height: 600px;
+            min-height: 420px;
           }
 
           .hero-content {
-            padding: 80px 0;
+            padding: 44px 0;
           }
 
           .hero-content h1 {
@@ -649,7 +649,7 @@ export default function ExperiencesPage() {
           .featured-section,
           .trust-section,
           .final-cta {
-            padding: 70px 0;
+            padding: 40px 0;
           }
 
           .category-grid,

@@ -72,6 +72,6 @@ export const MOCK_KYC_QUEUE: VendorKYC[] = [
 export const ADMIN_METRICS: MetricCard[] = [
   { label: 'Platform GMV', value: 'AED 2.4M', trend: '+5%' },
   { label: 'Active Vendors', value: '342', trend: '+12%' },
-  { label: 'Pending KYC', value: '23', icon: '⚠️' },
-  { label: 'Avg Commission', value: '8.5%', icon: '💰' },
+  { label: 'Pending KYC', value: '23', icon: 'AlertTriangle' },
+  { label: 'Avg Commission', value: '8.5%', icon: 'Coins' },
 ];

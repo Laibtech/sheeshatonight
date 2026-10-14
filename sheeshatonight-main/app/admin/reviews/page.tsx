@@ -151,7 +151,7 @@ export default function AdminReviewsPage() {
       header: 'Review Comment',
       cell: (row) => (
         <p className="text-xs text-[#29252B] italic line-clamp-2 max-w-sm">
-          "{row.comment || 'No written comment.'}"
+          &quot;{row.comment || 'No written comment.'}&quot;
         </p>
       ),
     },

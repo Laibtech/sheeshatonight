@@ -38,8 +38,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             });
           }
         }
-      } catch (err) {
-        console.error('Failed to load pending counts for admin layout:', err);
+      } catch {
+        // Fallback gracefully without console error
       }
     };
     fetchCounts();

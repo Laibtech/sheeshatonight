@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { prisma } from '@/lib/prisma';
+// Conditionally import prisma only if DATABASE_URL is set
+let prisma:any=null;
+if (process.env.DATABASE_URL){
+  const mod=require('@/lib/prisma');
+  prisma=mod.prisma;
+}
 import { DEFAULT_SEO_CONFIG } from '@/app/api/admin/seo/route';
 import { AuthHydration } from '@/components/AuthHydration';
 import { LayoutWrapper } from '@/components/LayoutWrapper';
@@ -9,15 +14,19 @@ import { CartProvider } from '@/contexts/CartContext';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import VerticalMarquee from '@/components/VerticalMarquee';
 import AgeVerification from '@/components/AgeVerification';
+import MobileBottomNav from '@/components/MobileBottomNav';
+import PWARegistration from '@/components/PWARegistration';
 
 export async function generateMetadata(): Promise<Metadata> {
   let seo = DEFAULT_SEO_CONFIG;
   try {
-    const record = await prisma.cmsContent.findUnique({
-      where: { key: 'seo_settings' },
-    });
-    if (record?.value) {
-      seo = record.value as any;
+    if (prisma) {
+      const record = await prisma.cmsContent.findUnique({
+        where: { key: 'seo_settings' },
+      });
+      if (record?.value) {
+        seo = record.value as any;
+      }
     }
   } catch (e) {}
 
@@ -56,11 +65,10 @@ export async function generateMetadata(): Promise<Metadata> {
       card: (s.twitterCard as any) || 'summary_large_image',
       title: g.defaultTitle,
       description: g.defaultDescription,
-      site: s.twitterSite || '@sheeshatonight',
-      images: [s.defaultOgImage || '/hero-banner.png'],
     },
   };
 }
+
 
 export default async function RootLayout({
   children,
@@ -89,35 +97,6 @@ export default async function RootLayout({
     },
   };
 
-  try {
-    const record = await prisma.cmsContent.findUnique({
-      where: { key: 'seo_settings' },
-    });
-    if (record?.value && (record.value as any).schema) {
-      const s = (record.value as any).schema;
-      schemaData = {
-        '@context': 'https://schema.org',
-        '@type': s.businessType || 'LocalBusiness',
-        name: s.name || 'SheeshaTonight UAE',
-        telephone: s.telephone || '+971 4 555 1234',
-        email: s.email || 'concierge@sheeshatonight.com',
-        priceRange: s.priceRange || '$$$',
-        currenciesAccepted: s.currenciesAccepted || 'AED, USD',
-        address: {
-          '@type': 'PostalAddress',
-          streetAddress: s.streetAddress || 'Downtown Boulevard, Burj Plaza',
-          addressLocality: s.addressLocality || 'Dubai',
-          addressCountry: s.addressCountry || 'AE',
-        },
-        geo: {
-          '@type': 'GeoCoordinates',
-          latitude: s.latitude || 25.1972,
-          longitude: s.longitude || 55.2744,
-        },
-      };
-    }
-  } catch (e) {}
-
   let faqSchemaData: any = null;
   let verificationData: any = null;
   let analyticsData: any = null;
@@ -128,6 +107,30 @@ export default async function RootLayout({
     });
     const val: any = record?.value;
     if (val) {
+      if (val.schema) {
+        const s = val.schema;
+        schemaData = {
+          '@context': 'https://schema.org',
+          '@type': s.businessType || 'LocalBusiness',
+          name: s.name || 'SheeshaTonight UAE',
+          telephone: s.telephone || '+971 4 555 1234',
+          email: s.email || 'concierge@sheeshatonight.com',
+          priceRange: s.priceRange || '$$$',
+          currenciesAccepted: s.currenciesAccepted || 'AED, USD',
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: s.streetAddress || 'Downtown Boulevard, Burj Plaza',
+            addressLocality: s.addressLocality || 'Dubai',
+            addressCountry: s.addressCountry || 'AE',
+          },
+          geo: {
+            '@type': 'GeoCoordinates',
+            latitude: s.latitude || 25.1972,
+            longitude: s.longitude || 55.2744,
+          },
+        };
+      }
+
       if (val.schema?.enableFaqSchema && Array.isArray(val.schema?.faqs) && val.schema.faqs.length > 0) {
         faqSchemaData = {
           '@context': 'https://schema.org',
@@ -152,8 +155,15 @@ export default async function RootLayout({
   } catch (e) {}
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* PWA & Mobile Web App Manifest */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#74189B" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="SheeshaTonight" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -167,6 +177,24 @@ export default async function RootLayout({
         {verificationData?.bing && (
           <meta name="msvalidate.01" content={verificationData.bing} />
         )}
+
+        {/* JSON-LD WebSite Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'SheeshaTonight',
+              url: process.env.NEXT_PUBLIC_APP_URL || 'https://sheeshatonight.com',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: `${process.env.NEXT_PUBLIC_APP_URL || 'https://sheeshatonight.com'}/shop?search={search_term_string}`,
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
 
         {/* JSON-LD LocalBusiness Schema */}
         <script
@@ -206,7 +234,7 @@ export default async function RootLayout({
           />
         )}
       </head>
-      <body className="bg-slate-50 text-slate-900 antialiased min-h-screen">
+      <body suppressHydrationWarning className="bg-slate-50 text-slate-900 antialiased min-h-screen">
         <AuthProvider>
           <CartProvider>
             <AuthHydration />
@@ -214,6 +242,8 @@ export default async function RootLayout({
             <WhatsAppFloat />
             <VerticalMarquee />
             <AgeVerification />
+            <MobileBottomNav />
+            <PWARegistration />
           </CartProvider>
         </AuthProvider>
       </body>

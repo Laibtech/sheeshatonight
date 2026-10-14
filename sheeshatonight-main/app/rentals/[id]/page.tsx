@@ -7,7 +7,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { defaultRentals, Rental } from "../page";
 import {
-  Star,
   MapPin,
   Clock,
   Users,
@@ -19,6 +18,7 @@ import {
   Truck,
   Heart,
   Calendar,
+  CheckCircle2,
 } from "lucide-react";
 
 export default function RentalDetailPage() {
@@ -94,7 +94,9 @@ export default function RentalDetailPage() {
                   className="main-image"
                 />
                 {rental.verified && (
-                  <span className="detail-badge">✓ Verified Vendor</span>
+                  <span className="detail-badge inline-flex items-center gap-1">
+                    <CheckCircle2 size={13} /> Verified Vendor
+                  </span>
                 )}
                 <button
                   className={`detail-wishlist-btn ${isWishlisted ? "active" : ""}`}
@@ -114,10 +116,6 @@ export default function RentalDetailPage() {
                 <h1>{rental.name}</h1>
 
                 <div className="detail-tags">
-                  <span className="tag rating">
-                    <Star size={14} className="inline mr-1" fill="#f1a51d" />
-                    {rental.rating} ({rental.reviews} reviews)
-                  </span>
                   <span className="tag location">
                     <MapPin size={14} className="inline mr-1" />
                     {rental.location}
@@ -236,7 +234,7 @@ export default function RentalDetailPage() {
                             className={`flavor-chip ${selected ? "selected" : ""}`}
                             onClick={() => toggleFlavor(fl)}
                           >
-                            {selected && "✓ "}
+                            {selected && <Check size={12} className="inline mr-1" />}
                             {fl}
                           </button>
                         );
@@ -312,7 +310,6 @@ export default function RentalDetailPage() {
                     <span className="related-vendor">{item.vendor}</span>
                     <h4>{item.name}</h4>
                     <div className="related-meta">
-                      <span>★ {item.rating}</span>
                       <span>{item.location}</span>
                     </div>
                     <strong className="related-price">

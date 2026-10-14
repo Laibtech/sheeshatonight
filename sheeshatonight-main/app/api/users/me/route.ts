@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db';
 import { verifyToken, extractToken } from '@/lib/jwt';
 import { comparePassword, hashPassword, validatePassword } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 function getToken(request: NextRequest): string | null {
   const authHeader = request.headers.get('Authorization');
   const token = extractToken(authHeader || '');

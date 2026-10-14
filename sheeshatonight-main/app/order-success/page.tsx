@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle, Package, Truck, Home } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
@@ -9,11 +9,17 @@ import PageLayout from '@/components/PageLayout';
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const orderNumbers = searchParams.get('orders')?.split(',').filter(Boolean) || [];
-  const estimatedDelivery = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  const [dates] = useState(() => {
+    const now = Date.now();
+    return {
+      estimatedDelivery: new Date(now + 2 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      orderDate: new Date(now).toLocaleDateString('en-GB')
+    };
   });
 
   return (
@@ -28,7 +34,7 @@ function OrderSuccessContent() {
               </div>
               <h1 className="text-4xl font-bold text-slate-900 mb-4">Order Placed Successfully!</h1>
               <p className="text-xl text-slate-600">
-                Thank you for your order. We've received your booking and will process it shortly.
+                Thank you for your order. We&apos;ve received your booking and will process it shortly.
               </p>
             </div>
 
@@ -45,7 +51,7 @@ function OrderSuccessContent() {
                   <div className="text-right">
                     <p className="text-sm text-slate-500 mb-1">Order Date</p>
                     <p className="text-lg font-semibold text-slate-900">
-                      {new Date().toLocaleDateString('en-GB')}
+                      {dates.orderDate}
                     </p>
                   </div>
                 </div>
@@ -69,7 +75,7 @@ function OrderSuccessContent() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-slate-900 mb-1">Processing</h3>
-                    <p className="text-sm text-slate-600">We're preparing your sheesha setup</p>
+                    <p className="text-sm text-slate-600">We&apos;re preparing your sheesha setup</p>
                   </div>
                 </div>
 
@@ -80,7 +86,7 @@ function OrderSuccessContent() {
                   <div className="flex-1">
                     <h3 className="font-bold text-slate-900 mb-1">Delivery</h3>
                     <p className="text-sm text-slate-600">
-                      Estimated delivery: <span className="font-semibold">{estimatedDelivery}</span>
+                      Estimated delivery: <span className="font-semibold">{dates.estimatedDelivery}</span>
                     </p>
                   </div>
                 </div>
@@ -96,7 +102,7 @@ function OrderSuccessContent() {
 
             {/* What's Next */}
             <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">What's Next?</h2>
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">What&apos;s Next?</h2>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="bg-[#D4AF37] rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
+export const dynamic = 'force-dynamic';
 
 // Default fallback content for when database is offline or empty
 const DEFAULT_CONTENT: Record<string, any> = {
@@ -25,10 +25,11 @@ const DEFAULT_CONTENT: Record<string, any> = {
 // GET: Public endpoint to fetch CMS content by key
 export async function GET(
   request: NextRequest,
-  { params }: { params: { key: string } }
+  { params }: { params: Promise<{ key: string }> | { key: string } }
 ) {
   try {
-    const { key } = params;
+    const resolvedParams = await params;
+    const { key } = resolvedParams;
 
     // Try to fetch from database
     let content = null;
@@ -65,8 +66,9 @@ export async function GET(
     console.error('CMS Content GET Error:', error);
     
     // Even on error, return fallback content
-    const { key } = params;
-    const fallbackContent = DEFAULT_CONTENT[key] || null;
+    const resolvedParams = await Promise.resolve(params);
+    const key = resolvedParams?.key;
+    const fallbackContent = key ? (DEFAULT_CONTENT[key] || null) : null;
     
     return NextResponse.json({
       success: true,

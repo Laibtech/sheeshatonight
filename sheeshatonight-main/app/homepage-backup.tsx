@@ -247,7 +247,7 @@ export default function LandingPage() {
                 <p className="text-[#55083e] font-bold text-lg">Premium • Stylish • Fully Managed</p>
               </div>
               <p className="text-slate-700 leading-relaxed">
-                Dubai's lifestyle includes villa parties, rooftop gatherings, yacht celebrations, weddings, and corporate events.
+                Dubai&apos;s lifestyle includes villa parties, rooftop gatherings, yacht celebrations, weddings, and corporate events.
                 Our Luxury Sheesha Rental UAE service is fully equipped to manage all types of private and high end events with professional setup and on site service.
               </p>
               <ul className="space-y-3">
@@ -397,7 +397,7 @@ export default function LandingPage() {
                 alt={activeTestimonialData.name}
                 className="w-32 h-32 rounded-full mx-auto mb-6 border-4 border-blue-500"
               />
-              <p className="text-xl text-slate-700 mb-6 italic">"{activeTestimonialData.text}"</p>
+              <p className="text-xl text-slate-700 mb-6 italic">&quot;{activeTestimonialData.text}&quot;</p>
               <h3 className="font-bold text-lg">{activeTestimonialData.name}</h3>
               <p className="text-blue-500 uppercase text-sm">{activeTestimonialData.role}</p>
             </div>

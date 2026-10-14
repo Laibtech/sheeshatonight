@@ -8,12 +8,13 @@ import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from 
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async () => {
     try {
       const customer = await prisma.user.findUnique({
-        where: { id: params.id },
+        where: { id },
         select: {
           id: true,
           name: true,
@@ -55,7 +56,7 @@ export async function GET(
 
       // Fetch reviews submitted by this user
       const reviews = await prisma.review.findMany({
-        where: { userId: params.id },
+        where: { userId: id },
         orderBy: { createdAt: 'desc' },
       });
 
@@ -101,15 +102,16 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
       const body = await req.json();
       const { status, kycStatus, verified } = body;
 
       const updated = await prisma.user.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           ...(status ? { status } : {}),
           ...(kycStatus ? { kycStatus } : {}),

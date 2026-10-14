@@ -367,7 +367,7 @@ export default function AdminCustomerDetailPage({ params }: { params: { id: stri
                     </div>
                     <StatusBadge status={rev.status} />
                   </div>
-                  <p className="text-[#29252B] italic">"{rev.comment}"</p>
+                  <p className="text-[#29252B] italic">&quot;{rev.comment}&quot;</p>
                   <p className="text-[10px] text-slate-400">
                     {new Date(rev.createdAt).toLocaleDateString('en-AE')}
                   </p>

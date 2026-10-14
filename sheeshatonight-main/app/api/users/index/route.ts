@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifyToken, extractToken } from '@/lib/jwt';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/users
  * Get all users (admin only)

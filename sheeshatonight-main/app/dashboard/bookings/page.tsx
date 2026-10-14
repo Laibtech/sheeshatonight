@@ -113,23 +113,25 @@ export default function BookingsPage() {
     fetchBookings();
   }, [fetchBookings]);
 
+  const [nowTime] = useState(() => Date.now());
+
   const upcomingCount = useMemo(
     () =>
       bookings.filter((booking) => {
         const start = booking.rentalStartDate ? new Date(booking.rentalStartDate).getTime() : 0;
-        return start >= Date.now() && booking.status !== 'CANCELLED';
+        return start >= nowTime && booking.status !== 'CANCELLED';
       }).length,
-    [bookings]
+    [bookings, nowTime]
   );
 
   const currentMonthCount = useMemo(
     () =>
       bookings.filter((booking) => {
         const date = new Date(booking.createdAt);
-        const now = new Date();
-        return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+        const nowDate = new Date(nowTime);
+        return date.getFullYear() === nowDate.getFullYear() && date.getMonth() === nowDate.getMonth();
       }).length,
-    [bookings]
+    [bookings, nowTime]
   );
 
   const totalSpent = bookings.reduce((sum, booking) => {
@@ -350,7 +352,7 @@ export default function BookingsPage() {
                   </div>
 
                   {booking.notes && (
-                    <p className="text-xs text-slate-500 italic">Notes: "{booking.notes}"</p>
+                    <p className="text-xs text-slate-500 italic">Notes: &quot;{booking.notes}&quot;</p>
                   )}
                 </div>
 

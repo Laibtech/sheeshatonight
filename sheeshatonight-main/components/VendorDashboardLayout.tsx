@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -24,7 +24,7 @@ import {
 import React, { useState, useEffect, ReactNode } from "react";
 import { useAuthStore } from "@/lib/store";
 
-const PRIMARY = "#8A277E";
+const PRIMARY = "#74189B";
 
 const navigation = [
   {
@@ -87,7 +87,7 @@ const navigation = [
     items: [
       {
         label: "My Store",
-        href: "/vendor/settings",
+        href: "/vendor/store",
         icon: Store,
       },
       {
@@ -125,17 +125,66 @@ export function VendorDashboardLayout({
 }: VendorDashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { userName, logout } = useAuthStore();
   const [vendorName, setVendorName] = useState<string>("Vendor Account");
 
   useEffect(() => {
-    // Attempt to load vendor store name
+    let isMounted = true;
+
+    // Fast initial check from storage or username
     const storedName = localStorage.getItem("vendor_name") || userName;
     if (storedName) {
       setVendorName(storedName);
     }
+
+    // Always fetch active server session profile to prevent stale local cache
+    const syncVendorProfile = async () => {
+      try {
+        let token = localStorage.getItem("auth_token");
+        if (!token && typeof document !== "undefined") {
+          const match = document.cookie.match(/(?:^|; )auth_token=([^;]*)/);
+          if (match && match[1]) token = decodeURIComponent(match[1]);
+        }
+
+        const res = await fetch("/api/auth/me", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            const realName = json.data.vendor?.name || json.data.name || "Vendor Account";
+            if (isMounted) {
+              setVendorName(realName);
+            }
+            if (typeof window !== "undefined") {
+              localStorage.setItem("vendor_name", realName);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to sync vendor layout:", err);
+      }
+    };
+
+    syncVendorProfile();
+
+    const handleVendorUpdate = (e: any) => {
+      if (e?.detail?.name && isMounted) {
+        setVendorName(e.detail.name);
+      }
+    };
+
+    window.addEventListener("vendor_profile_updated", handleVendorUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("vendor_profile_updated", handleVendorUpdate);
+    };
   }, [userName]);
 
   const getAutoTitle = () => {
@@ -146,6 +195,7 @@ export function VendorDashboardLayout({
     if (pathname.startsWith("/vendor/orders")) return "Orders Management";
     if (pathname.startsWith("/vendor/earnings")) return "Earnings & Financials";
     if (pathname.startsWith("/vendor/payouts")) return "Payouts & Settlements";
+    if (pathname.startsWith("/vendor/store")) return "My Store";
     if (pathname.startsWith("/vendor/settings")) return "Store Settings";
     if (pathname.startsWith("/vendor/reviews")) return "Customer Reviews";
     if (pathname.startsWith("/vendor/customers")) return "Store Customers";
@@ -154,23 +204,56 @@ export function VendorDashboardLayout({
 
   const title = getAutoTitle();
 
-  const isActive = (href: string) => {
-    const cleanHref = href.split("?")[0];
-    if (!cleanHref) return false;
+  // Deterministic single-active calculation to avoid multiple active highlights
+  const activeHref = React.useMemo(() => {
+    const currentPath = pathname || "/vendor";
+    const isAdd = searchParams?.get("add") === "true";
 
-    if (cleanHref === "/vendor") {
-      return pathname === "/vendor";
+    // Products page vs Add Product query
+    if (currentPath === "/vendor/products") {
+      return isAdd ? "/vendor/products?add=true" : "/vendor/products";
     }
 
-    return Boolean(pathname?.startsWith(cleanHref));
-  };
+    if (currentPath === "/vendor") {
+      return "/vendor";
+    }
 
+    // Check exact matches
+    const allHrefs: string[] = [];
+    navigation.forEach((sec) => sec.items.forEach((it) => allHrefs.push(it.href)));
+
+    const exact = allHrefs.find((h) => h === currentPath);
+    if (exact) return exact;
+
+    // Prefix matches for subroutes (excluding /vendor root)
+    const prefix = allHrefs.find((h) => {
+      if (h === "/vendor") return false;
+      const basePath = h.split("?")[0] || "";
+      return basePath.length > 0 && currentPath.startsWith(basePath);
+    });
+    return prefix || null;
+  }, [pathname, searchParams]);
+
+  const isItemActive = (href: string) => {
+    return activeHref === href;
+  };
 
   const handleLogout = () => {
     if (logout) logout();
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("user_data");
-    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user_data");
+      localStorage.removeItem("user_role");
+      localStorage.removeItem("user_email");
+      localStorage.removeItem("user_name");
+      localStorage.removeItem("vendor_name");
+      document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "user_name=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "vendor_name=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "user_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    }
     window.location.href = "/auth/login";
   };
 
@@ -186,17 +269,14 @@ export function VendorDashboardLayout({
       {/* DESKTOP SIDEBAR */}
       <aside className="vendor-sidebar">
         <div className="vendor-logo">
-          <Link href="/vendor">
-            <Image
+          <Link href="/vendor" className="vendor-brand-link">
+            <img
               src="/logo.png"
               alt="SheeshaTonight"
-              width={175}
-              height={55}
-              priority
+              className="vendor-logo-img"
             />
+            <span className="vendor-badge">VENDOR</span>
           </Link>
-
-          <span className="vendor-panel-label">VENDOR PANEL</span>
         </div>
 
         <nav className="vendor-nav">
@@ -206,7 +286,7 @@ export function VendorDashboardLayout({
 
               {section.items.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.href);
+                const active = isItemActive(item.href);
 
                 return (
                   <Link
@@ -216,7 +296,7 @@ export function VendorDashboardLayout({
                       active ? "active" : ""
                     }`}
                   >
-                    <Icon size={18} strokeWidth={1.8} />
+                    <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
 
                     <span>{item.label}</span>
 
@@ -294,7 +374,7 @@ export function VendorDashboardLayout({
 
               {section.items.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.href);
+                const active = isItemActive(item.href);
 
                 return (
                   <Link
@@ -305,9 +385,13 @@ export function VendorDashboardLayout({
                       active ? "active" : ""
                     }`}
                   >
-                    <Icon size={18} />
+                    <Icon size={18} strokeWidth={active ? 2.2 : 1.8} />
 
                     <span>{item.label}</span>
+
+                    {active && (
+                      <span className="active-indicator" />
+                    )}
                   </Link>
                 );
               })}
@@ -345,10 +429,13 @@ export function VendorDashboardLayout({
             <form onSubmit={handleSearchSubmit} className="header-search">
               <Search size={17} />
               <input
+                id="vendor-dashboard-search-input"
+                name="vendor-dashboard-search"
                 type="search"
                 placeholder="Search products, orders..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
               />
             </form>
 
@@ -427,42 +514,57 @@ export function VendorDashboardLayout({
         }
 
         .vendor-logo {
-          padding: 27px 25px 24px;
-          border-bottom: 1px solid #eee9f0;
+          height: 64px;
+          padding: 0 20px;
+          display: flex;
+          align-items: center;
+          border-bottom: 1px solid #E9E3EB;
         }
 
-        .vendor-logo img {
+        .vendor-brand-link {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          text-decoration: none;
+        }
+
+        .vendor-logo-img {
+          height: 38px;
           width: auto;
-          height: auto;
-          max-width: 170px;
+          max-width: 130px;
+          object-fit: contain;
         }
 
-        .vendor-panel-label {
-          display: block;
-          margin-top: 10px;
-          color: #8a277e;
-          font-size: 9px;
-          font-weight: 800;
-          letter-spacing: 0.2em;
+        .vendor-badge {
+          font-size: 10px;
+          padding: 2px 7px;
+          background: rgba(241, 165, 29, 0.15);
+          color: #9E6500;
+          font-weight: 900;
+          border-radius: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          border: 1px solid rgba(241, 165, 29, 0.3);
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
         }
 
         .vendor-nav {
           flex: 1;
           overflow-y: auto;
-          padding: 22px 14px;
+          padding: 18px 12px;
         }
 
         .nav-section {
-          margin-bottom: 24px;
+          margin-bottom: 22px;
         }
 
         .nav-section-title {
           padding: 0 12px;
-          margin-bottom: 8px;
-          color: #aaa2ac;
-          font-size: 9px;
+          margin-bottom: 6px;
+          color: #94a3b8;
+          font-size: 9.5px;
           font-weight: 800;
-          letter-spacing: 0.17em;
+          letter-spacing: 0.15em;
         }
 
         .vendor-nav-item {
@@ -470,34 +572,36 @@ export function VendorDashboardLayout({
           display: flex;
           align-items: center;
           gap: 12px;
-          min-height: 43px;
+          min-height: 41px;
           margin-bottom: 3px;
-          padding: 0 13px;
+          padding: 0 12px;
           border-radius: 9px;
-          color: #716974;
+          color: #64748b;
           font-size: 13px;
           font-weight: 600;
-          transition: 0.18s ease;
+          transition: 0.15s ease;
         }
 
         .vendor-nav-item:hover {
-          background: #faf3fa;
-          color: #8a277e;
+          background: #FAF5FB;
+          color: #74189B;
         }
 
         .vendor-nav-item.active {
-          background: #f5eaf4;
-          color: #8a277e;
-          font-weight: 750;
+          background: #FAF5FB;
+          color: #74189B;
+          font-weight: 700;
+          border: 1px solid rgba(116, 24, 155, 0.14);
+          box-shadow: 0 1px 3px rgba(116, 24, 155, 0.04);
         }
 
         .active-indicator {
           position: absolute;
-          right: 0;
-          width: 3px;
-          height: 23px;
-          border-radius: 4px 0 0 4px;
-          background: #8a277e;
+          left: 0;
+          width: 3.5px;
+          height: 22px;
+          border-radius: 0 4px 4px 0;
+          background: #74189B;
         }
 
         .sidebar-bottom {
@@ -566,8 +670,8 @@ export function VendorDashboardLayout({
         }
 
         .logout-button:hover {
-          background: #faf3fa;
-          color: #8a277e;
+          background: #FAF5FB;
+          color: #74189B;
         }
 
         /* MAIN */
@@ -581,14 +685,15 @@ export function VendorDashboardLayout({
           position: sticky;
           top: 0;
           z-index: 30;
-          min-height: 78px;
+          height: 64px;
+          min-height: 64px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 25px;
-          padding: 0 34px;
-          border-bottom: 1px solid #ebe6ed;
-          background: rgba(255, 255, 255, 0.96);
+          gap: 24px;
+          padding: 0 28px;
+          border-bottom: 1px solid #E9E3EB;
+          background: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(12px);
         }
 
@@ -605,16 +710,17 @@ export function VendorDashboardLayout({
         .breadcrumb {
           display: flex;
           align-items: center;
-          gap: 4px;
-          color: #a09aa2;
-          font-size: 10px;
+          gap: 5px;
+          color: #94a3b8;
+          font-size: 11px;
           font-weight: 600;
         }
 
         .header-left h1 {
-          margin: 3px 0 0;
-          color: #29232b;
-          font-size: 18px;
+          margin: 2px 0 0;
+          color: #1e293b;
+          font-size: 16px;
+          font-weight: 800;
           letter-spacing: -0.02em;
         }
 
@@ -623,21 +729,22 @@ export function VendorDashboardLayout({
         }
 
         .header-search {
-          width: 245px;
-          height: 40px;
+          width: 260px;
+          height: 38px;
           display: flex;
           align-items: center;
           gap: 9px;
           padding: 0 12px;
-          border: 1px solid #e5dfe7;
-          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          border-radius: 9px;
           background: #fff;
-          color: #9a929c;
+          color: #94a3b8;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
 
         .header-search:focus-within {
-          border-color: #8a277e;
-          box-shadow: 0 0 0 3px rgba(138, 39, 126, 0.07);
+          border-color: #74189B;
+          box-shadow: 0 0 0 3px rgba(116, 24, 155, 0.08);
         }
 
         .header-search input {

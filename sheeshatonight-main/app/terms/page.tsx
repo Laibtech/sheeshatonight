@@ -3,7 +3,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { Calendar, Sparkles } from 'lucide-react';
-import { prisma } from '@/lib/prisma';
+// Conditionally import prisma only if DATABASE_URL is set
+let prisma:any=null;
+if (process.env.DATABASE_URL){
+  const mod=require('@/lib/prisma');
+  prisma=mod.prisma;
+}
 
 export const revalidate = 60; // 60-second edge cache for instant delivery
 

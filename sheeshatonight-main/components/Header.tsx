@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
+import { useAuthStore } from "@/lib/store";
 import {
   Search,
   Heart,
@@ -15,34 +17,62 @@ import {
 } from "lucide-react";
 
 export default function Header() {
+  const pathname = usePathname() || "";
   const { itemCount } = useCart();
+  const { isLoggedIn, userRole } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [rentalsOpen, setRentalsOpen] = useState(false);
 
+  const accountHref = !isLoggedIn
+    ? "/auth/login"
+    : userRole === "VENDOR"
+    ? "/vendor"
+    : userRole === "ADMIN" || userRole === "SUPER_ADMIN"
+    ? "/admin"
+    : "/dashboard";
+
+  const isHomeActive = pathname === "/";
+  const isShopActive = pathname.startsWith("/shop") || pathname.startsWith("/categories") || pathname.startsWith("/products");
+  const isRentalsActive = pathname.startsWith("/rentals");
+  const isExperiencesActive = pathname.startsWith("/experiences");
+  const isVendorsActive = pathname.startsWith("/vendors");
+  const isAboutActive = pathname.startsWith("/about");
+  const isContactActive = pathname.startsWith("/contact");
+
+  const getLinkClass = (isActive: boolean) =>
+    `relative text-[13px] tracking-wide font-semibold py-1 transition-colors ${
+      isActive
+        ? "text-[#74189B] font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#74189B] after:rounded-full"
+        : "text-slate-700 hover:text-[#74189B]"
+    }`;
+
   return (
     <>
-      <div className="bg-[#74189B] text-white text-center text-[12px] sm:text-[13px] py-2.5 px-4 tracking-wide">
+      <div suppressHydrationWarning className="bg-[#74189B] text-white text-center text-[12px] sm:text-[13px] py-2.5 px-4 tracking-wide font-medium">
         Premium Sheesha Experiences Across the UAE{" "}
-        <span className="hidden sm:inline">|</span>{" "}
-        <span className="font-semibold">Same-Day Delivery Available</span>
+        <span className="hidden sm:inline opacity-70">|</span>{" "}
+        <span className="font-semibold text-amber-300">Same-Day Delivery Available</span>
       </div>
 
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-[76px] flex items-center justify-between gap-6">
-            <Link href="/" className="shrink-0">
+      <header suppressHydrationWarning className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs">
+        <div suppressHydrationWarning className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div suppressHydrationWarning className="h-[76px] flex items-center justify-between gap-6">
+            <Link href="/" className="shrink-0 flex items-center">
               <img
                 src="/logo.png"
                 alt="SheeshaTonight"
-                className="w-[115px] sm:w-[130px] h-auto object-contain transition-all"
+                width={130}
+                height={40}
+                className="w-[120px] sm:w-[135px] h-auto object-contain transition-all"
+                style={{ height: 'auto', maxHeight: '44px', width: 'auto', objectFit: 'contain' }}
               />
             </Link>
 
             <nav className="hidden lg:flex items-center gap-7">
               <Link
                 href="/"
-                className="text-[13px] font-semibold text-[#571275] hover:text-[#74189B] transition"
+                className={getLinkClass(isHomeActive)}
               >
                 HOME
               </Link>
@@ -54,7 +84,7 @@ export default function Header() {
               >
                 <Link
                   href="/shop"
-                  className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-700 hover:text-[#74189B]"
+                  className={`flex items-center gap-1.5 ${getLinkClass(isShopActive)}`}
                 >
                   SHOP
                   <ChevronDown size={14} />
@@ -175,7 +205,7 @@ export default function Header() {
               >
                 <Link
                   href="/rentals"
-                  className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-700 hover:text-[#74189B]"
+                  className={`flex items-center gap-1.5 ${getLinkClass(isRentalsActive)}`}
                 >
                   RENTALS
                   <ChevronDown size={14} />
@@ -246,28 +276,28 @@ export default function Header() {
 
               <Link
                 href="/experiences"
-                className="text-[13px] font-semibold text-gray-700 hover:text-[#74189B]"
+                className={getLinkClass(isExperiencesActive)}
               >
                 EXPERIENCES
               </Link>
 
               <Link
                 href="/vendors"
-                className="text-[13px] font-semibold text-gray-700 hover:text-[#74189B]"
+                className={getLinkClass(isVendorsActive)}
               >
                 VENDORS
               </Link>
 
               <Link
                 href="/about"
-                className="text-[13px] font-semibold text-gray-700 hover:text-[#74189B]"
+                className={getLinkClass(isAboutActive)}
               >
                 ABOUT
               </Link>
 
               <Link
                 href="/contact"
-                className="text-[13px] font-semibold text-gray-700 hover:text-[#74189B]"
+                className={getLinkClass(isContactActive)}
               >
                 CONTACT
               </Link>
@@ -276,39 +306,52 @@ export default function Header() {
             <div className="flex items-center gap-2 sm:gap-4">
               <Link
                 href="/shop"
-                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B]"
+                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B] transition-colors"
+                title="Search Shop"
               >
                 <Search size={19} strokeWidth={1.8} />
               </Link>
 
               <Link
                 href="/wishlist"
-                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B]"
+                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B] transition-colors"
+                title="My Wishlist"
               >
                 <Heart size={19} strokeWidth={1.8} />
               </Link>
 
               <Link
-                href="/dashboard"
-                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B]"
+                href={accountHref}
+                title={
+                  !isLoggedIn
+                    ? "Sign In"
+                    : userRole === "VENDOR"
+                    ? "Vendor Dashboard"
+                    : userRole === "ADMIN" || userRole === "SUPER_ADMIN"
+                    ? "Admin Portal"
+                    : "Customer Dashboard"
+                }
+                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B] transition-colors"
               >
                 <User size={19} strokeWidth={1.8} />
               </Link>
 
               <Link
                 href="/cart"
-                className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B]"
+                className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B] transition-colors"
+                title="Shopping Cart"
               >
                 <ShoppingBag size={19} strokeWidth={1.8} />
 
-                <span className="absolute -top-0.5 -right-0.5 w-[17px] h-[17px] rounded-full bg-[#F1A51D] text-white text-[9px] flex items-center justify-center font-bold">
+                <span className="absolute -top-0.5 -right-0.5 w-[17px] h-[17px] rounded-full bg-[#F1A51D] text-white text-[9px] flex items-center justify-center font-bold shadow-2xs">
                   {itemCount}
                 </span>
               </Link>
 
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#F8F2FA]"
+                aria-label={mobileOpen ? "Close menu" : "Open menu"}
+                className="lg:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#F8F2FA] text-slate-700 transition-colors"
               >
                 {mobileOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
@@ -317,46 +360,51 @@ export default function Header() {
         </div>
 
         {mobileOpen && (
-          <div className="lg:hidden border-t border-gray-100 bg-white">
+          <div className="lg:hidden border-t border-gray-100 bg-white shadow-lg animate-in fade-in duration-200">
             <nav className="px-5 py-5 space-y-1">
               {[
-                { label: "HOME", href: "/" },
-                { label: "SHOP", href: "/shop" },
-                { label: "RENTALS", href: "/rentals" },
-                { label: "EXPERIENCES", href: "/experiences" },
-                { label: "VENDORS", href: "/vendors" },
-                { label: "ABOUT", href: "/about" },
-                { label: "CONTACT", href: "/contact" },
-              ].map(({ label, href }) => (
+                { label: "HOME", href: "/", active: isHomeActive },
+                { label: "SHOP", href: "/shop", active: isShopActive },
+                { label: "RENTALS", href: "/rentals", active: isRentalsActive },
+                { label: "EXPERIENCES", href: "/experiences", active: isExperiencesActive },
+                { label: "VENDORS", href: "/vendors", active: isVendorsActive },
+                { label: "ABOUT", href: "/about", active: isAboutActive },
+                { label: "CONTACT", href: "/contact", active: isContactActive },
+              ].map(({ label, href, active }) => (
                 <Link
                   key={label}
                   href={href}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center justify-between py-3.5 border-b border-gray-100 text-sm font-semibold text-gray-700"
+                  className={`flex items-center justify-between py-3.5 border-b border-gray-100 text-sm font-semibold transition-colors ${
+                    active ? "text-[#74189B] font-bold" : "text-slate-700 hover:text-[#74189B]"
+                  }`}
                 >
-                  {label}
-                  <ChevronRight size={16} />
+                  <span>{label}</span>
+                  <ChevronRight size={16} className={active ? "text-[#74189B]" : "text-slate-400"} />
                 </Link>
               ))}
 
               <div className="grid grid-cols-3 gap-2 pt-4">
                 <Link
                   href="/wishlist"
-                  className="bg-[#F8F2FA] rounded-xl py-3 text-center text-xs font-semibold text-[#74189B]"
+                  onClick={() => setMobileOpen(false)}
+                  className="bg-[#F8F2FA] rounded-xl py-3 text-center text-xs font-semibold text-[#74189B] hover:bg-purple-100/60 transition-colors"
                 >
                   Wishlist
                 </Link>
 
                 <Link
-                  href="/dashboard"
-                  className="bg-[#F8F2FA] rounded-xl py-3 text-center text-xs font-semibold text-[#74189B]"
+                  href={accountHref}
+                  onClick={() => setMobileOpen(false)}
+                  className="bg-[#F8F2FA] rounded-xl py-3 text-center text-xs font-semibold text-[#74189B] hover:bg-purple-100/60 transition-colors"
                 >
                   Account
                 </Link>
 
                 <Link
                   href="/cart"
-                  className="bg-[#F8F2FA] rounded-xl py-3 text-center text-xs font-semibold text-[#74189B]"
+                  onClick={() => setMobileOpen(false)}
+                  className="bg-[#F8F2FA] rounded-xl py-3 text-center text-xs font-semibold text-[#74189B] hover:bg-purple-100/60 transition-colors"
                 >
                   Cart
                 </Link>

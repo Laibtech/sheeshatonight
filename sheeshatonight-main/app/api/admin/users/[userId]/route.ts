@@ -8,11 +8,11 @@ import { prisma } from '@/lib/prisma';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> | { userId: string } }
 ) {
+  const { userId } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { userId } = params;
       const body = await req.json();
       const { action } = body;
 
@@ -98,11 +98,11 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> | { userId: string } }
 ) {
+  const { userId } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { userId } = params;
 
       const user = await prisma.user.findUnique({
         where: { id: userId },

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { Check } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -399,7 +400,7 @@ export default function AboutClient({
         /* INTRO */
 
         .intro-section {
-          padding: 110px 0;
+          padding: 56px 0;
         }
 
         .intro-grid {
@@ -471,7 +472,7 @@ export default function AboutClient({
         /* SERVICES */
 
         .what-section {
-          padding: 105px 0;
+          padding: 56px 0;
           background: #faf8fb;
         }
 
@@ -613,7 +614,7 @@ export default function AboutClient({
         /* VALUES */
 
         .values-section {
-          padding: 110px 0;
+          padding: 56px 0;
         }
 
         .values-grid {
@@ -671,7 +672,7 @@ export default function AboutClient({
         /* UAE */
 
         .uae-section {
-          padding: 100px 0;
+          padding: 56px 0;
           background: #faf8fb;
         }
 
@@ -709,7 +710,7 @@ export default function AboutClient({
         /* CTA */
 
         .about-cta {
-          padding: 110px 0;
+          padding: 60px 0;
           text-align: center;
           background: #74189b;
           color: #fff;
@@ -888,7 +889,9 @@ function Value({
 }) {
   return (
     <div className="value-item">
-      <div className="value-icon">✓</div>
+      <div className="value-icon">
+        <Check className="w-5 h-5 text-[#74189b]" />
+      </div>
 
       <div>
         <h3>{title}</h3>

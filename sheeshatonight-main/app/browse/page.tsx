@@ -13,7 +13,8 @@ import {
   Filter,
   Map as MapIcon,
   Loader2,
-  Store
+  Store,
+  CheckCircle2
 } from 'lucide-react';
 
 const emirates = [
@@ -220,7 +221,11 @@ function VendorCard({ vendor }: { vendor: VendorRecord }) {
           <div>
             <h3>
               {vendor.name}
-              {vendor.verified && <span className="verified">✓</span>}
+              {vendor.verified && (
+                <span className="verified inline-flex items-center ml-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                </span>
+              )}
             </h3>
             <p className="vendor-location">
               <MapPin className="w-3 h-3 inline" /> {vendor.location || 'Dubai'}

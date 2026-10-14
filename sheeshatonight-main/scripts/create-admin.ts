@@ -19,7 +19,7 @@ async function createAdmin() {
 
     // Create admin user
     const hashedPassword = await bcrypt.hash('admin123', 10);
-    
+
     const admin = await prisma.user.create({
       data: {
         name: 'Admin User',
@@ -32,7 +32,7 @@ async function createAdmin() {
       }
     });
 
-    console.log('✅ Admin user created successfully!');
+    console.log('Admin user created successfully!');
     console.log('Email: admin@sheeshatonight.com');
     console.log('Password: admin123');
     console.log('');

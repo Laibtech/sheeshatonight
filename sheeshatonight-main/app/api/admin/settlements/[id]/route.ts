@@ -8,15 +8,16 @@ import { SettlementStatus } from '@prisma/client';
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
       const body = await req.json();
       const { status, amount, commission, period } = body;
 
       const updated = await prisma.settlement.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           ...(status ? { status: status as SettlementStatus } : {}),
           ...(status === 'PAID' ? { paidAt: new Date() } : {}),
@@ -45,14 +46,15 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async () => {
     try {
       await prisma.settlement.delete({
-        where: { id: params.id },
+        where: { id },
       });
-      return successResponse({ id: params.id }, 'Settlement deleted successfully');
+      return successResponse({ id }, 'Settlement deleted successfully');
     } catch (error) {
       console.error('Delete settlement error:', error);
       return errorResponse('Failed to delete settlement', 500);

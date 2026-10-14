@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Star } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -359,7 +360,7 @@ export default function VendorsPage() {
                 <h3>No vendors found</h3>
 
                 <p>
-                  We couldn't find vendors matching your current filters.
+                  We couldn&apos;t find vendors matching your current filters.
                 </p>
 
                 <button onClick={clearFilters} className="primary-btn">
@@ -439,7 +440,7 @@ export default function VendorsPage() {
                         </div>
 
                         <div className="vendor-rating">
-                          <span className="star">★</span>
+                          <Star size={14} className="fill-[#e4ad36] text-[#e4ad36]" />
                           <strong>
                             {vendor.rating
                               ? vendor.rating.toFixed(1)
@@ -689,7 +690,7 @@ export default function VendorsPage() {
           }
 
           .directory-section {
-            padding: 78px 0 100px;
+            padding: 44px 0 56px;
           }
 
           .directory-heading {
@@ -1133,7 +1134,7 @@ export default function VendorsPage() {
           }
 
           .vendor-cta {
-            padding: 100px 20px;
+            padding: 56px 20px;
             background: #f7f1f9;
           }
 

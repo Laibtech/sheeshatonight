@@ -36,12 +36,13 @@ function parseLocation(loc: any): string {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    const { id } = await params;
     const vendor = await prisma.vendor.findFirst({
       where: {
-        OR: [{ id: params.id }, { slug: params.id }],
+        OR: [{ id }, { slug: id }],
       },
       select: { id: true, name: true, location: true },
     });

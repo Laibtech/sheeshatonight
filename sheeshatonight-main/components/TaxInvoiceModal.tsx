@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
-import { Printer, Download, X, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Printer, Download, X, CheckCircle2, ShieldCheck, FileCheck } from 'lucide-react';
 
 export interface TaxInvoiceData {
   id: string;
@@ -44,6 +44,20 @@ interface TaxInvoiceModalProps {
 }
 
 export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || !data) return null;
 
   const formatAED = (amount: number = 0) => {
@@ -55,31 +69,141 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
     }).format(amount);
   };
 
+  const invoiceNum = data.invoiceNumber || `INV-${data.orderNumber}`;
+
+  // Clean, isolated print dialog
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = `Tax-Invoice-${invoiceNum}`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
+  };
+
+  // Direct Download Invoice Slip as Standalone Document
+  const handleDownloadSlip = () => {
+    const invoiceEl = document.getElementById('printable-tax-invoice');
+    if (!invoiceEl) return;
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tax Invoice - ${invoiceNum}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      padding: 30px 16px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .invoice-wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .print-btn-bar {
+      max-width: 820px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .btn-action {
+      background: #74189B;
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-action:hover { background: #571275; }
+    @media print {
+      body { background: #ffffff; padding: 0; }
+      .print-btn-bar { display: none; }
+      .invoice-wrapper { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-btn-bar">
+    <button class="btn-action" onclick="window.print()">Print / Save as PDF</button>
+  </div>
+  <div class="invoice-wrapper">
+    ${invoiceEl.innerHTML}
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Tax-Invoice-${invoiceNum}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
-      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8">
-        {/* Action Top Bar (Hidden on Print) */}
-        <div className="print:hidden flex items-center justify-between px-6 py-3.5 bg-slate-900 text-white">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/75 backdrop-blur-xs flex justify-center items-start p-3 sm:p-6 animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-4 sm:my-8 flex flex-col">
+        {/* Sticky Action Top Bar (Pinned to Top, Never Cut Off) */}
+        <div className="print:hidden sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 bg-slate-900 text-white shadow-md">
           <div className="flex items-center gap-2 text-xs font-bold">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Official UAE Tax Invoice Preview</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="truncate">Official UAE Tax Invoice Preview</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
+              type="button"
+              onClick={handleDownloadSlip}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#F1A51D] to-[#D4AF37] hover:brightness-110 text-slate-950 text-xs font-black shadow-sm transition active:scale-95"
+              title="Download standalone invoice slip file"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download Slip</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition border border-white/10 active:scale-95"
+              title="Print or Save as PDF"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print / Download PDF</span>
+              <span className="hidden sm:inline">Print / PDF</span>
             </button>
+
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition ml-1"
+              title="Close invoice"
             >
               <X className="w-5 h-5" />
             </button>
@@ -87,17 +211,15 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
         </div>
 
         {/* Printable Invoice Paper */}
-        <div className="p-8 sm:p-12 text-slate-800 bg-white" id="printable-tax-invoice">
+        <div className="p-6 sm:p-12 text-slate-800 bg-white" id="printable-tax-invoice">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-8 border-b-2 border-slate-100">
             <div>
-              <Image
+              <img
                 src="/logo.png"
                 alt="SheeshaTonight"
-                width={190}
-                height={60}
-                priority
-                className="object-contain mb-3"
+                style={{ width: '175px', height: 'auto', maxHeight: '55px', objectFit: 'contain' }}
+                className="mb-3"
               />
               <p className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                 SheeshaTonight Portal LLC
@@ -114,7 +236,7 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
                 TAX INVOICE / فاتورة ضريبية
               </span>
               <h2 className="text-xl font-mono font-black text-slate-900">
-                #{data.invoiceNumber}
+                #{invoiceNum}
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 Order Ref: <span className="font-bold text-slate-800">#{data.orderNumber}</span>
@@ -122,11 +244,13 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
               <p className="text-xs text-slate-500">
                 Date:{' '}
                 <span className="font-semibold text-slate-800">
-                  {new Date(data.issuedAt).toLocaleDateString('en-AE', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
+                  {data.issuedAt
+                    ? new Date(data.issuedAt).toLocaleDateString('en-AE', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : 'N/A'}
                 </span>
               </p>
               <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black">
@@ -158,18 +282,18 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
                 Fulfilled By (Vendor / Partner)
               </p>
               <h3 className="text-sm font-bold text-slate-900">
-                {data.vendor?.name || 'SheeshaTonight Direct'}
+                {data.vendor?.name || 'Royal Sheesha Lounge'}
               </h3>
               <p className="text-slate-600 mt-0.5">
                 {data.vendor?.location || 'Dubai, United Arab Emirates'}
               </p>
-              <p className="text-slate-500 mt-1">Payment Method: {data.paymentMethod || 'Online Payment'}</p>
+              <p className="text-slate-500 mt-1">Payment Method: {data.paymentMethod || 'Cash on Delivery / Card on Arrival'}</p>
             </div>
           </div>
 
           {/* Items Table */}
-          <div className="py-6">
-            <table className="w-full text-left text-xs">
+          <div className="py-6 overflow-x-auto">
+            <table className="w-full text-left text-xs min-w-[500px]">
               <thead>
                 <tr className="border-b-2 border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="pb-3 text-slate-700">Item Description</th>
@@ -207,7 +331,7 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
                 ) : (
                   <tr>
                     <td className="py-3 font-semibold text-slate-900">
-                      Standard Sheesha Rental & Service Package
+                      Platinum VIP Hookah Set
                     </td>
                     <td className="py-3 text-center text-slate-600 font-bold">1</td>
                     <td className="py-3 text-right text-slate-600 font-mono">
@@ -252,7 +376,7 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
           </div>
 
           {/* Legal Compliance Notice & Stamp */}
-          <div className="mt-12 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+          <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
             <div className="max-w-md text-left">
               <p className="font-semibold text-slate-600">
                 Thank you for choosing SheeshaTonight!
@@ -271,6 +395,39 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
           </div>
         </div>
       </div>
+
+      {/* Scoped Clean Print Stylesheet */}
+      <style jsx global>{`
+        @media print {
+          html, body {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-tax-invoice,
+          #printable-tax-invoice * {
+            visibility: visible !important;
+          }
+          #printable-tax-invoice {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 24px !important;
+            border: none !important;
+            box-shadow: none !important;
+            z-index: 999999 !important;
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

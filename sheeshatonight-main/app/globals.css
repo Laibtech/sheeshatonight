@@ -1,8 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 :root {
   --primary: #74189B;
@@ -14,6 +13,9 @@
 html {
   scroll-behavior: smooth;
   font-family: var(--font-family);
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 body {
@@ -21,6 +23,9 @@ body {
   font-family: var(--font-family);
   background: #ffffff;
   color: #171717;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 *,
@@ -45,6 +50,14 @@ a {
 ::selection {
   background: #74189B;
   color: #ffffff;
+}
+
+/* iOS Safe Area Utilities for Mobile Navigation */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* =========================
@@ -550,7 +563,7 @@ SECTIONS
 width: 92%;
 max-width: 1440px;
 margin: 0 auto;
-padding: 90px 0;
+padding: 48px 0;
 }
 
 .section-heading {
@@ -989,7 +1002,7 @@ justify-content: center;
 HOW IT WORKS
 ========================= */
 .how-section {
-padding: 70px 0 40px;
+padding: 48px 0 36px;
 background: transparent;
 }
 
@@ -1941,6 +1954,12 @@ body:has(.vendor-layout) .vertical-marquee {
   display: none !important;
 }
 
+@media (min-width: 1025px) {
+  body:not(:has(.dashboard-layout)):not(:has(.admin-layout)):not(:has(.vendor-layout)) {
+    padding-left: 46px;
+  }
+}
+
 .vertical-marquee-track {
   display: flex;
   flex-direction: column;
@@ -2000,27 +2019,10 @@ body:has(.vendor-layout) .vertical-marquee {
   animation-play-state: paused;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
+/* Hide on tablet and mobile to ensure full layout responsiveness */
+@media (max-width: 1024px) {
   .vertical-marquee {
-    width: 40px;
-  }
-  
-  .vertical-marquee-track {
-    gap: 18px;
-  }
-  
-  .vertical-marquee-track span {
-    font-size: 9.5px;
-    letter-spacing: 2.2px;
-    padding: 0 3px;
-  }
-}
-
-/* Hide on very small screens to maintain layout readability */
-@media (max-width: 480px) {
-  .vertical-marquee {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -2284,4 +2286,7 @@ PRINT STYLES FOR INVOICES
     size: A4 portrait;
   }
 }
+
+
+
 

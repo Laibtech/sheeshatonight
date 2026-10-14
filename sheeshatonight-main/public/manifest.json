@@ -1,0 +1,48 @@
+{
+  "name": "SheeshaTonight | Luxury Hookah & Rentals",
+  "short_name": "SheeshaTonight",
+  "description": "Premium Sheesha Rental, Marketplace & VIP Lounges in UAE",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0E",
+  "theme_color": "#74189B",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle", "entertainment"],
+  "shortcuts": [
+    {
+      "name": "Rent a Sheesha",
+      "short_name": "Rentals",
+      "description": "Explore VIP Sheesha catering and private setups",
+      "url": "/rentals",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Shop Flavors & Hookahs",
+      "short_name": "Shop",
+      "description": "Browse premium tobacco flavors and luxury hookahs",
+      "url": "/shop",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Cart",
+      "short_name": "Cart",
+      "description": "View your shopping cart",
+      "url": "/cart",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    }
+  ]
+}

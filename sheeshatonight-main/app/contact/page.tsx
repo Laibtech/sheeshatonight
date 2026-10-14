@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { Mail, Phone, Check, ArrowRight } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -90,7 +91,9 @@ export default function ContactPage() {
               {/* LEFT INFO */}
               <div className="contact-info">
                 <div className="info-card featured">
-                  <div className="info-icon">✉</div>
+                  <div className="info-icon">
+                    <Mail className="w-5 h-5" />
+                  </div>
 
                   <div>
                     <span>Email</span>
@@ -102,7 +105,9 @@ export default function ContactPage() {
                 </div>
 
                 <div className="info-card">
-                  <div className="info-icon">☎</div>
+                  <div className="info-icon">
+                    <Phone className="w-5 h-5" />
+                  </div>
 
                   <div>
                     <span>Phone</span>
@@ -253,7 +258,9 @@ export default function ContactPage() {
                   </>
                 ) : (
                   <div className="success-state">
-                    <div className="success-icon">✓</div>
+                    <div className="success-icon">
+                      <Check className="w-8 h-8 text-emerald-600" />
+                    </div>
 
                     <span className="eyebrow purple">MESSAGE SENT</span>
 
@@ -309,32 +316,18 @@ export default function ContactPage() {
           scroll-behavior: smooth;
         }
 
-        body {
-          margin: 0;
-          font-family:
-            Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-            "Segoe UI", sans-serif;
-          color: #29252b;
-          background: #fff;
-        }
-
-        a {
-          text-decoration: none;
-        }
-
-        button,
-        input,
-        textarea,
-        select {
-          font: inherit;
-        }
-
         .container {
           max-width: 1440px;
           width: 100%;
           margin: 0 auto;
-          padding: 0 32px;
+          padding: 0 44px;
           box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+          .container {
+            padding: 0 20px;
+          }
         }
 
         /* HERO */
@@ -360,7 +353,7 @@ export default function ContactPage() {
         .hero-content {
           position: relative;
           z-index: 2;
-          padding: 100px 0;
+          padding: 56px 0;
         }
 
         .eyebrow {
@@ -431,7 +424,7 @@ export default function ContactPage() {
         /* CONTACT */
 
         .contact-section {
-          padding: 105px 0;
+          padding: 56px 0;
           background: #fff;
         }
 
@@ -747,7 +740,7 @@ export default function ContactPage() {
         /* FAQ CTA */
 
         .faq-cta {
-          padding: 75px 0;
+          padding: 44px 0;
           background: #faf7fb;
           border-top: 1px solid #eee7f0;
         }
@@ -827,11 +820,11 @@ export default function ContactPage() {
           }
 
           .contact-hero {
-            min-height: 500px;
+            min-height: 380px;
           }
 
           .hero-content {
-            padding: 75px 0;
+            padding: 44px 0;
           }
 
           .contact-hero h1 {
@@ -852,7 +845,7 @@ export default function ContactPage() {
           }
 
           .contact-section {
-            padding: 70px 0;
+            padding: 44px 0;
           }
 
           .section-heading {

@@ -70,8 +70,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
             setResults(data.results);
           }
         }
-      } catch (err) {
-        console.error('Global search error:', err);
+      } catch {
+        // Fallback gracefully without console error
       } finally {
         setLoading(false);
       }
@@ -108,10 +108,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
           <Search className="w-5 h-5 text-[#74189B]" />
           <input
             ref={inputRef}
+            id="admin-global-search-input"
+            name="admin-global-search-input"
             type="text"
             placeholder="Search orders, products, customers, vendors..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            autoComplete="off"
             className="flex-1 bg-transparent text-sm text-[#29252B] focus:outline-none placeholder-slate-400 font-medium"
           />
           {loading && <Loader2 className="w-4 h-4 text-[#74189B] animate-spin" />}
@@ -136,7 +139,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
             </div>
           ) : results.length === 0 ? (
             <div className="p-8 text-center text-xs text-[#716975]">
-              No results found for "{query}".
+              No results found for &quot;{query}&quot;.
             </div>
           ) : (
             results.map((item) => (

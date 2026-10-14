@@ -16,9 +16,23 @@ export const setSessionCookie = (payload: SessionPayload) => {
 };
 
 export const clearSessionCookie = () => {
+  document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'user_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'user_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'vendor_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'user_region=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+};
+
+export const clearAllClientAuth = () => {
+  clearSessionCookie();
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('vendor_name');
+    localStorage.removeItem('user_data');
+  }
 };

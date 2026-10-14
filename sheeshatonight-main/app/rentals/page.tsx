@@ -8,7 +8,6 @@ import Footer from "@/components/Footer";
 import {
   Search,
   Check,
-  Star,
   MapPin,
   Clock,
   Users,
@@ -20,6 +19,8 @@ import {
   ShoppingBag,
   ArrowRight,
   MessageCircle,
+  Truck,
+  CheckCircle2,
 } from "lucide-react";
 
 export type Rental = {
@@ -329,8 +330,8 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             setLiveRentals(mapped);
           }
         }
-      } catch (e) {
-        console.error('Error loading live rentals:', e);
+      } catch {
+        // Fallback gracefully without console error
       }
     }
     fetchLiveRentalPackages();
@@ -454,9 +455,18 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             </p>
 
             <div className="hero-trust">
-              <span>✓ Verified Vendors</span>
-              <span>✓ Premium Quality</span>
-              <span>✓ UAE-Wide Service</span>
+              <span className="trust-badge" style={{ color: '#ffffff' }}>
+                <CheckCircle2 size={16} color="#F1A51D" className="flex-shrink-0" />
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>Verified Vendors</span>
+              </span>
+              <span className="trust-badge" style={{ color: '#ffffff' }}>
+                <Sparkles size={16} color="#F1A51D" className="flex-shrink-0" />
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>Premium Quality</span>
+              </span>
+              <span className="trust-badge" style={{ color: '#ffffff' }}>
+                <Truck size={16} color="#F1A51D" className="flex-shrink-0" />
+                <span style={{ color: '#ffffff', fontWeight: 600 }}>UAE-Wide Service</span>
+              </span>
             </div>
           </div>
         </section>
@@ -666,7 +676,9 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
 
               {bookingSuccess ? (
                 <div className="booking-success-box">
-                  <div className="success-icon">✓</div>
+                  <div className="success-icon">
+                    <Check size={28} className="text-emerald-600" />
+                  </div>
                   <h4>Inquiry Sent Successfully!</h4>
                   <p>
                     Our VIP concierge team will reach out to you within 15
@@ -713,7 +725,7 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
 
                   {selectedRental.features && (
                     <div className="modal-inclusions">
-                      <h5>What's Included:</h5>
+                      <h5>What&apos;s Included:</h5>
                       <ul>
                         {selectedRental.features.map((feat, i) => (
                           <li key={i}>
@@ -920,6 +932,10 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             color: #29252b;
             font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
               Roboto, sans-serif;
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+            box-sizing: border-box;
           }
 
           /* HERO */
@@ -955,20 +971,20 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             max-width: 1440px;
             width: 100%;
             margin: auto;
-            padding: 90px 32px 130px;
+            padding: 64px 32px 120px;
             color: white;
             box-sizing: border-box;
           }
 
           @media (max-width: 1024px) {
             .hero-content {
-              padding: 80px 24px 120px;
+              padding: 50px 24px 95px;
             }
           }
 
           @media (max-width: 640px) {
             .hero-content {
-              padding: 60px 16px 100px;
+              padding: 40px 16px 40px;
             }
           }
 
@@ -1007,9 +1023,26 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
           .hero-trust {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px 25px;
+            gap: 12px;
             font-size: 13px;
             font-weight: 600;
+          }
+
+          .hero-trust .trust-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            padding: 7px 16px;
+            border-radius: 24px;
+            backdrop-filter: blur(8px);
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+          }
+
+          .hero-trust .trust-badge span {
+            color: #ffffff !important;
           }
 
           /* SEARCH */
@@ -1136,19 +1169,19 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             max-width: 1440px;
             width: 100%;
             margin: 0 auto;
-            padding: 85px 32px;
+            padding: 48px 32px;
             box-sizing: border-box;
           }
 
           @media (max-width: 1024px) {
             .rentals-content {
-              padding: 70px 24px;
+              padding: 40px 24px;
             }
           }
 
           @media (max-width: 640px) {
             .rentals-content {
-              padding: 50px 16px;
+              padding: 32px 16px;
             }
           }
 
@@ -1760,41 +1793,84 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             }
           }
 
-          @media (max-width: 700px) {
+          @media (max-width: 768px) {
             .rentals-hero {
-              min-height: 540px;
+              min-height: auto;
+              padding: 20px 0 36px;
             }
 
             .hero-content {
-              padding: 80px 0 130px;
+              padding: 32px 18px 24px;
+              width: 100%;
+              box-sizing: border-box;
             }
 
             .hero-content h1 {
-              font-size: 43px;
+              font-size: clamp(26px, 7vw, 36px);
+              letter-spacing: -0.8px;
+              line-height: 1.15;
+              word-break: break-word;
             }
 
             .hero-content p {
               font-size: 15px;
+              line-height: 1.55;
+              margin: 14px 0 20px;
+            }
+
+            .hero-trust {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+              margin-bottom: 8px;
+            }
+
+            .hero-trust .trust-badge {
+              font-size: 12px;
+              padding: 6px 12px;
             }
 
             .search-wrapper {
-              margin-top: -80px;
+              margin-top: -24px;
+              padding: 0 16px;
+              width: 100%;
+              box-sizing: border-box;
             }
 
             .search-card {
-              padding: 20px;
+              padding: 20px 16px;
+              border-radius: 16px;
+              box-sizing: border-box;
+              width: 100%;
             }
 
             .search-heading {
+              display: flex;
+              justify-content: space-between;
               align-items: center;
+              gap: 12px;
+              margin-bottom: 16px;
+            }
+
+            .search-heading h2 {
+              font-size: clamp(17px, 4.5vw, 21px);
+              line-height: 1.25;
+              margin: 4px 0 0;
             }
 
             .mobile-filter-btn {
-              display: block;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              white-space: nowrap;
+              flex-shrink: 0;
+              padding: 8px 14px;
+              font-size: 13px;
             }
 
             .filter-grid {
               grid-template-columns: 1fr;
+              gap: 10px;
             }
 
             .filter-grid .filter {
@@ -1802,28 +1878,76 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             }
 
             .filter-grid .search-btn {
-              margin-top: 5px;
+              margin-top: 4px;
+              width: 100%;
+              height: 48px;
+              border-radius: 10px;
+              font-size: 14px;
             }
 
             .content-top {
-              display: block;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 14px;
+              margin-bottom: 24px;
             }
 
             .content-top h2 {
-              font-size: 30px;
+              font-size: clamp(22px, 5.5vw, 28px);
+              line-height: 1.2;
+              letter-spacing: -0.5px;
+              margin: 4px 0 0;
+            }
+
+            .content-top p {
+              margin: 6px 0 0;
+              font-size: 14px;
+              line-height: 1.5;
             }
 
             .sort-box {
-              margin-top: 20px;
-              max-width: 220px;
+              margin-top: 4px;
+              width: 100%;
+              max-width: 100%;
+            }
+
+            .sort-box select {
+              width: 100%;
             }
 
             .rental-grid {
               grid-template-columns: 1fr;
+              gap: 18px;
+              width: 100%;
             }
 
             .rentals-content {
-              padding: 60px 0;
+              padding: 36px 16px 50px;
+              width: 100%;
+              max-width: 100%;
+              box-sizing: border-box;
+            }
+
+            .shop-cross-promo {
+              padding: 26px 18px;
+              border-radius: 16px;
+              margin-top: 36px;
+            }
+
+            .promo-text h3 {
+              font-size: clamp(18px, 4.8vw, 22px);
+            }
+
+            .promo-text p {
+              font-size: 13px;
+              line-height: 1.5;
+            }
+
+            .promo-cta {
+              width: 100%;
+              justify-content: center;
+              box-sizing: border-box;
             }
 
             .modal-inclusions ul {
@@ -1836,30 +1960,41 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
           }
 
           @media (max-width: 450px) {
-            .rentals-hero {
-              min-height: 500px;
-            }
-
             .hero-content {
-              width: calc(100% - 30px);
+              padding: 24px 14px 20px;
+              width: 100%;
+              box-sizing: border-box;
             }
 
             .hero-content h1 {
-              font-size: 37px;
-              letter-spacing: -1.5px;
+              font-size: clamp(24px, 7vw, 28px);
+              letter-spacing: -0.5px;
             }
 
             .hero-trust {
-              display: grid;
-              gap: 9px;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 7px;
             }
 
             .search-wrapper {
               padding: 0 12px;
+              margin-top: -16px;
+              width: 100%;
+              box-sizing: border-box;
+            }
+
+            .search-card {
+              padding: 18px 14px;
+            }
+
+            .rentals-content {
+              padding: 28px 12px 60px;
             }
 
             .rental-image {
-              height: 230px;
+              height: 220px;
             }
           }
         `}</style>
@@ -1962,14 +2097,18 @@ function RentalCard({
       <div className="rental-image">
         <img src={rental.image} alt={rental.name} loading="lazy" />
 
-        {rental.verified && <span className="verified">✓ Verified</span>}
+        {rental.verified && (
+          <span className="verified inline-flex items-center gap-1">
+            <CheckCircle2 size={12} /> Verified
+          </span>
+        )}
 
         <button
           className={`wishlist ${isWishlisted ? "active" : ""}`}
           onClick={onToggleWishlist}
           aria-label={`Add ${rental.name} to wishlist`}
         >
-          {isWishlisted ? "♥" : "♡"}
+          <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
         </button>
       </div>
 
@@ -1980,11 +2119,6 @@ function RentalCard({
 
         <div className="meta">
           <span>{rental.location}</span>
-
-          <span className="rating">
-            ★ {rental.rating} ({rental.reviews})
-          </span>
-
           {rental.duration && <span>{rental.duration}</span>}
         </div>
 

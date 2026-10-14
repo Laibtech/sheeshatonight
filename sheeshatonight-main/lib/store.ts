@@ -21,7 +21,7 @@ export interface AuthState {
   logout: () => void;
 }
 
-import { clearSessionCookie } from './session';
+import { clearAllClientAuth } from './session';
 
 export const useAuthStore = create<AuthState>((set) => ({
   isLoggedIn: false,
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   
   logout: () => {
-    clearSessionCookie();
+    clearAllClientAuth();
     set({
       isLoggedIn: false,
       userRole: 'CUSTOMER',

@@ -74,7 +74,7 @@ const ActionModal: React.FC<ActionModalProps> = ({
         
         <p className="text-gray-600 dark:text-gray-300 mb-6">
           {message}
-          {itemName && <span className="font-semibold block mt-2">"{itemName}"</span>}
+          {itemName && <span className="font-semibold block mt-2">&quot;{itemName}&quot;</span>}
         </p>
 
         <div className="flex gap-3 justify-end">

@@ -7,9 +7,9 @@ import { withVendor, errorResponse, successResponse, AuthenticatedRequest } from
  * Mark notification as read/unread
  * Uses EXISTING Notification table
  */
-export const PATCH = withVendor(async (req: AuthenticatedRequest, { params }: { params: { id: string } }) => {
+export const PATCH = withVendor(async (req: AuthenticatedRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
 
     const vendor = await prisma.vendor.findUnique({

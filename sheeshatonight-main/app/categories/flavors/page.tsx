@@ -78,7 +78,7 @@ export default function FlavorsPage() {
       <Header />
       <main className="category-page">
         {/* HERO */}
-        <section className="category-hero">
+        <section className="category-hero hero-flavors">
           <div className="category-hero-content">
             <Link href="/" className="category-back-link">
               ← Back to Home

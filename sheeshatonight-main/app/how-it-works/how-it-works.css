@@ -229,7 +229,7 @@
 
 /* ========================= STEPS ========================= */
 .how-steps-section {
-  padding: 100px 5%;
+  padding: 56px 5%;
   background: white;
 }
 
@@ -320,7 +320,7 @@
 
 /* ========================= EXPERIENCE ========================= */
 .experience-section {
-  padding: 100px 8%;
+  padding: 56px 8%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 90px;
@@ -396,7 +396,7 @@
 
 /* ========================= FEATURES ========================= */
 .features-section {
-  padding: 100px 5%;
+  padding: 56px 5%;
 }
 
 .features-grid {

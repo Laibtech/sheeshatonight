@@ -324,7 +324,7 @@ export default function AdminSeoPage() {
     }));
     addToast({
       type: 'success',
-      title: '✨ AI Generated High-CTR Meta Tags',
+      title: 'AI Generated High-CTR Meta Tags',
       message: 'Applied optimal title and description tailored for Dubai luxury search intent.',
     });
   };
@@ -699,9 +699,10 @@ export default function AdminSeoPage() {
                   <button
                     type="button"
                     onClick={generateAiMeta}
-                    className="px-3.5 py-1.5 bg-[#E4AD36] text-purple-950 rounded-lg text-xs font-bold hover:bg-amber-300 transition"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#E4AD36] text-purple-950 rounded-lg text-xs font-bold hover:bg-amber-300 transition"
                   >
-                    ✨ Auto-Optimize Meta Copy
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Auto-Optimize Meta Copy
                   </button>
                   <button
                     type="button"

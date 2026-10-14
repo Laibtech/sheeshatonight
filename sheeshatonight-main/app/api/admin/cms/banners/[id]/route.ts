@@ -3,9 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from '@/lib/middleware';
 
 // PATCH: Update banner
-export const PATCH = withAdmin(async (req: AuthenticatedRequest, { params }: { params: { id: string } }) => {
+export const PATCH = withAdmin(async (req: AuthenticatedRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
 
     const banner = await prisma.cmsBanner.update({
@@ -21,9 +21,9 @@ export const PATCH = withAdmin(async (req: AuthenticatedRequest, { params }: { p
 });
 
 // DELETE: Delete banner by ID
-export const DELETE = withAdmin(async (req: AuthenticatedRequest, { params }: { params: { id: string } }) => {
+export const DELETE = withAdmin(async (req: AuthenticatedRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) => {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     await prisma.cmsBanner.delete({
       where: { id },

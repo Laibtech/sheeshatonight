@@ -3,12 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword, validateRegisterInput } from '@/lib/auth';
 import { generateToken } from '@/lib/jwt';
 import { setAuthCookie } from '@/lib/middleware';
+import { rateLimiters, withRateLimit } from '@/lib/rateLimiter';
 
 /**
  * POST /api/auth/register
  * Register a new user
  */
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(rateLimiters.auth, async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { name, email, phone, password, confirmPassword, role = 'CUSTOMER' } = body;
@@ -65,11 +66,30 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    let vendorRecord = null;
+    if (user.role === 'VENDOR') {
+      const baseSlug = (trimmedName || 'vendor').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `vendor-${user.id.slice(-6)}`;
+      const existingSlug = await prisma.vendor.findUnique({ where: { slug: baseSlug } });
+      const finalSlug = existingSlug ? `${baseSlug}-${Date.now().toString().slice(-4)}` : baseSlug;
+      vendorRecord = await prisma.vendor.create({
+        data: {
+          userId: user.id,
+          name: trimmedName || 'Vendor Lounge',
+          slug: finalSlug,
+          phone: normalizedPhone,
+          location: 'Dubai, UAE',
+          isActive: true,
+          tier: 'SOLO',
+        },
+      });
+    }
+
     // Generate JWT token
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role,
+      vendorId: vendorRecord?.id,
     });
 
     // Create response and set auth cookies
@@ -83,12 +103,20 @@ export async function POST(request: NextRequest) {
           name: user.name,
           email: user.email,
           role: user.role,
+          vendorId: vendorRecord?.id,
+          vendorName: vendorRecord?.name,
         },
+        vendor: vendorRecord ? { id: vendorRecord.id, name: vendorRecord.name, slug: vendorRecord.slug } : undefined,
       },
       { status: 201 }
     );
 
-    return setAuthCookie(token, response, user.role);
+    return setAuthCookie(token, response, {
+      role: user.role,
+      email: user.email,
+      name: user.name,
+      vendorName: vendorRecord?.name,
+    });
   } catch (error: any) {
     console.error('Register error:', error);
     if (error?.code === 'P2002') {
@@ -109,4 +137,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

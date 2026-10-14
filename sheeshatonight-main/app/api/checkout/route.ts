@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth, AuthenticatedRequest } from '@/lib/middleware';
 import { notifyVendorNewOrder } from '@/lib/notifications';
+import { sendOrderConfirmationEmail } from '@/lib/email';
 import type { Cart, Product, Vendor } from '@prisma/client';
 
 type CartWithProductAndVendor = Cart & {
@@ -41,6 +42,17 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         { success: false, error: 'User not found' },
         { status: 404 }
       );
+    }
+
+    // Server-side legal age requirement for UAE tobacco/sheesha marketplace (18+)
+    if (user.dob) {
+      const ageInYears = (Date.now() - new Date(user.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+      if (ageInYears < 18) {
+        return NextResponse.json(
+          { success: false, error: 'You must be at least 18 years of age to order sheesha or tobacco products.' },
+          { status: 403 }
+        );
+      }
     }
 
     // Fetch cart items with product and vendor details
@@ -172,6 +184,15 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
 
         // Create order items & decrement stock atomically
         for (const item of items) {
+          const currentProd = await tx.product.findUnique({
+            where: { id: item.productId },
+            select: { id: true, stock: true, title: true },
+          });
+
+          if (!currentProd || currentProd.stock < item.quantity) {
+            throw new Error(`Insufficient stock for "${currentProd?.title || item.product.title}". Only ${currentProd?.stock ?? 0} available.`);
+          }
+
           await tx.orderItem.create({
             data: {
               orderId: order.id,
@@ -224,6 +245,22 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
           await notifyVendorNewOrder(order.id);
         } catch (err) {
           console.error(`Vendor notification error for order ${order.id}:`, err);
+        }
+
+        // Dispatch email confirmation to customer
+        try {
+          if (user.email) {
+            await sendOrderConfirmationEmail({
+              to: user.email,
+              customerName: user.name || 'Valued Customer',
+              orderNumber: order.orderNumber,
+              totalAmount: order.totalAmount.toString(),
+              currency: order.currency,
+              vendorName: vendor.name,
+            });
+          }
+        } catch (emailErr) {
+          console.error(`Order confirmation email error for order ${order.id}:`, emailErr);
         }
       }
 

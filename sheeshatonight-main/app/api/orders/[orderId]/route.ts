@@ -20,7 +20,7 @@ function extractTokenFromReq(request: Request): string | null {
  * GET /api/orders/[orderId]
  * Get order details
  */
-export async function GET(request: Request, { params }: { params: { orderId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ orderId: string }> | { orderId: string } }) {
   try {
     const token = extractTokenFromReq(request);
 
@@ -34,7 +34,8 @@ export async function GET(request: Request, { params }: { params: { orderId: str
     }
 
     const userId = user.id;
-    const orderId = params.orderId;
+    const resolvedParams = await params;
+    const orderId = resolvedParams.orderId;
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -87,7 +88,7 @@ export async function GET(request: Request, { params }: { params: { orderId: str
  * POST /api/orders/[orderId]
  * Update order status (vendor actions)
  */
-export async function POST(request: Request, { params }: { params: { orderId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ orderId: string }> | { orderId: string } }) {
   try {
     const token = extractTokenFromReq(request);
 
@@ -101,7 +102,8 @@ export async function POST(request: Request, { params }: { params: { orderId: st
     }
 
     const userId = user.id;
-    const orderId = params.orderId;
+    const resolvedParams = await params;
+    const orderId = resolvedParams.orderId;
 
     const body = await request.json();
     const validation = orderActionSchema.safeParse(body);
@@ -146,7 +148,19 @@ export async function POST(request: Request, { params }: { params: { orderId: st
         if (order.status !== 'PREPARING') {
           return errorResponse('Order is not in PREPARING state', 400);
         }
-        updateData = { status: 'CANCELLED', cancelledAt: new Date() };
+        updateData = { status: 'CANCELLED', cancelledAt: new Date(), payoutStatus: 'FAILED' };
+        // Restock inventory
+        try {
+          const itemsToRestock = await prisma.orderItem.findMany({ where: { orderId } });
+          for (const it of itemsToRestock) {
+            await prisma.product.update({
+              where: { id: it.productId },
+              data: { stock: { increment: it.quantity } },
+            });
+          }
+        } catch (restockErr) {
+          console.error('Failed to restock cancelled items:', restockErr);
+        }
         break;
 
       case 'ship':
@@ -160,14 +174,26 @@ export async function POST(request: Request, { params }: { params: { orderId: st
         if (!['OUT_FOR_DELIVERY', 'ACTIVE_RENTAL'].includes(order.status)) {
           return errorResponse('Order cannot be delivered in current state', 400);
         }
-        updateData = { status: 'DELIVERED', deliveredAt: new Date() };
+        updateData = { status: 'DELIVERED', deliveredAt: new Date(), payoutStatus: 'ELIGIBLE' };
         break;
 
       case 'cancel':
         if (['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(order.status)) {
           return errorResponse('Cannot cancel order in current state', 400);
         }
-        updateData = { status: 'CANCELLED', cancelledAt: new Date() };
+        updateData = { status: 'CANCELLED', cancelledAt: new Date(), payoutStatus: 'FAILED' };
+        // Restock inventory
+        try {
+          const itemsToRestock = await prisma.orderItem.findMany({ where: { orderId } });
+          for (const it of itemsToRestock) {
+            await prisma.product.update({
+              where: { id: it.productId },
+              data: { stock: { increment: it.quantity } },
+            });
+          }
+        } catch (restockErr) {
+          console.error('Failed to restock cancelled items:', restockErr);
+        }
         break;
 
       default:

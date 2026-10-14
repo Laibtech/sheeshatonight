@@ -20,14 +20,30 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // Validate file types
+    if (files.length > 5) {
+      return NextResponse.json(
+        { error: 'Maximum 5 files can be uploaded per request' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file types and extensions strictly
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const safeExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp']);
     const maxSize = 5 * 1024 * 1024; // 5MB
 
     for (const file of files) {
       if (!allowedTypes.includes(file.type)) {
         return NextResponse.json(
           { error: `Invalid file type: ${file.type}. Allowed: JPEG, PNG, WebP` },
+          { status: 400 }
+        );
+      }
+
+      const rawExt = path.extname(file.name).toLowerCase();
+      if (!safeExtensions.has(rawExt)) {
+        return NextResponse.json(
+          { error: `Invalid file extension: ${rawExt}. Allowed: .jpg, .jpeg, .png, .webp` },
           { status: 400 }
         );
       }
@@ -55,11 +71,11 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      // Generate unique filename
+      // Generate strictly sanitized unique filename
       const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 15);
-      const extension = path.extname(file.name);
-      const filename = `product-${timestamp}-${randomString}${extension}`;
+      const randomString = Math.random().toString(36).substring(2, 10);
+      const safeExtension = path.extname(file.name).toLowerCase().replace(/[^a-z0-9.]/g, '') || '.jpg';
+      const filename = `product-${timestamp}-${randomString}${safeExtension}`;
 
       // Write file
       const filepath = path.join(uploadDir, filename);

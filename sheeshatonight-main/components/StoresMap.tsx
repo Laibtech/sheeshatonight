@@ -93,10 +93,10 @@ export default function StoresMap({ stores }: StoresMapProps) {
         <div class="store-popup">
           <div class="popup-header">
             <h3>${store.name}</h3>
-            ${store.verified ? '<span class="verified-tag">✓ Verified</span>' : ''}
+            ${store.verified ? '<span class="verified-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;margin-right:3px;vertical-align:-1px"><polyline points="20 6 9 17 4 12"></polyline></svg>Verified</span>' : ''}
           </div>
           <div class="popup-rating">
-            <span class="rating-star">★</span>
+            <span class="rating-star"><svg width="12" height="12" viewBox="0 0 24 24" fill="#e4ad36" stroke="#e4ad36" stroke-width="1" style="display:inline;vertical-align:-1px;margin-right:2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
             <strong>${store.rating}</strong>
             <span>(${store.reviews} reviews)</span>
           </div>

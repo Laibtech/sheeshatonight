@@ -55,14 +55,36 @@ export default function AdminCategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<CategoryRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  useEffect(() => {
+    let ignore = false;
+    const load = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+        const query = search ? `?search=${encodeURIComponent(search)}` : '';
+        const res = await fetch(`/api/admin/categories${query}`, { headers });
+        if (res.ok && !ignore) {
+          const json = await res.json();
+          setCategories(json.data?.categories || json.categories || []);
+        }
+      } catch (err) {
+        if (!ignore) console.error('Error fetching categories:', err);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [search]);
+
   const fetchCategories = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-
       const query = search ? `?search=${encodeURIComponent(search)}` : '';
-
       const res = await fetch(`/api/admin/categories${query}`, { headers });
       if (res.ok) {
         const json = await res.json();
@@ -74,10 +96,6 @@ export default function AdminCategoriesPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchCategories();
-  }, [search]);
 
   const handleOpenAdd = () => {
     setEditingCategory(null);

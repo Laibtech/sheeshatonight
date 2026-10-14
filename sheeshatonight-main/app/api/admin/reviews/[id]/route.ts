@@ -8,8 +8,9 @@ import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from 
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
       const body = await req.json();
@@ -20,7 +21,7 @@ export async function PUT(
       }
 
       const updated = await prisma.review.update({
-        where: { id: params.id },
+        where: { id },
         data: { status },
       });
 
@@ -37,14 +38,15 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async () => {
     try {
       await prisma.review.delete({
-        where: { id: params.id },
+        where: { id },
       });
-      return successResponse({ id: params.id }, 'Review deleted successfully');
+      return successResponse({ id }, 'Review deleted successfully');
     } catch (error) {
       console.error('Delete review error:', error);
       return errorResponse('Failed to delete review', 500);

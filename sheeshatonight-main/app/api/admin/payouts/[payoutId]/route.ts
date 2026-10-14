@@ -8,11 +8,11 @@ import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from 
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { payoutId: string } }
+  { params }: { params: Promise<{ payoutId: string }> | { payoutId: string } }
 ) {
+  const { payoutId } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { payoutId } = params;
       const body = await req.json();
       const { action } = body; // 'process', 'pay', 'fail'
 

@@ -52,6 +52,19 @@ export default function AdminReportsPage() {
     fetchReportsData();
   }, []);
 
+  const downloadCsv = (filename: string, rows: (string | number)[][]) => {
+    const csvContent = rows.map((e) => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const fetchReportsData = async () => {
     try {
       setLoading(true);
@@ -66,14 +79,31 @@ export default function AdminReportsPage() {
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         if (statsData.success && statsData.data) {
-          setStats(statsData.data);
+          const d = statsData.data;
+          setStats({
+            totalRevenue: Number(d.totalRevenue || 0),
+            totalOrders: Number(d.totalOrders || 0),
+            totalUsers: Number(d.totalUsers || 0),
+            totalVendors: Number(d.totalVendors || 0),
+            totalProducts: Number(d.totalProducts || 0),
+            lowStockCount: Number(d.lowStockCount ?? d.lowStockProducts ?? 0),
+            pendingReviews: Number(d.pendingReviews || 0),
+            averageOrderValue: Number(d.averageOrderValue || 0),
+          });
         }
       }
 
       if (ordersRes.ok) {
         const ordersData = await ordersRes.json();
-        if (ordersData.success && Array.isArray(ordersData.data)) {
-          setRecentOrders(ordersData.data);
+        const rawOrders = ordersData.data || ordersData.orders || [];
+        if (Array.isArray(rawOrders)) {
+          setRecentOrders(
+            rawOrders.map((o: any) => ({
+              ...o,
+              total: Number(o.totalAmount ?? o.total ?? 0),
+              totalAmount: Number(o.totalAmount ?? o.total ?? 0),
+            }))
+          );
         }
       }
     } catch (err) {
@@ -89,30 +119,26 @@ export default function AdminReportsPage() {
     try {
       const rows = [
         ['SheeshaTonight - Platform Analytics & Financial Summary'],
-        [`Generated On: ${new Date().toLocaleString()}`],
+        [`Generated On: "${new Date().toLocaleString()}"`],
         [''],
         ['Metric', 'Value'],
-        ['Gross Platform Revenue (AED)', stats.totalRevenue.toFixed(2)],
-        ['Total Orders Processed', stats.totalOrders.toString()],
-        ['Average Order Value (AED)', stats.averageOrderValue.toFixed(2)],
-        ['Total Registered Users', stats.totalUsers.toString()],
-        ['Verified Store Vendors', stats.totalVendors.toString()],
-        ['Total Products in Catalogue', stats.totalProducts.toString()],
-        ['Low Stock Inventory Items', stats.lowStockCount.toString()],
-        ['Pending Product Reviews', stats.pendingReviews.toString()],
+        ['Gross Platform Revenue (AED)', Number(stats.totalRevenue || 0).toFixed(2)],
+        ['Total Orders Processed', String(stats.totalOrders || 0)],
+        ['Average Order Value (AED)', Number(stats.averageOrderValue || 0).toFixed(2)],
+        ['Total Registered Users', String(stats.totalUsers || 0)],
+        ['Verified Store Vendors', String(stats.totalVendors || 0)],
+        ['Total Products in Catalogue', String(stats.totalProducts || 0)],
+        ['Low Stock Inventory Items', String(stats.lowStockCount ?? 0)],
+        ['Pending Product Reviews', String(stats.pendingReviews || 0)],
       ];
 
-      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `sheeshatonight_executive_summary_${new Date().toISOString().substring(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
+      downloadCsv(
+        `sheeshatonight_executive_summary_${new Date().toISOString().substring(0, 10)}.csv`,
+        rows
+      );
       showToast('Executive Summary CSV exported successfully!', 'success');
     } catch (err) {
+      console.error('Failed to export summary CSV:', err);
       showToast('Failed to generate CSV export', 'error');
     } finally {
       setExportingType(null);
@@ -132,28 +158,24 @@ export default function AdminReportsPage() {
       const rows = [
         ['Order ID', 'Customer Name', 'Customer Email', 'Status', 'Payment Method', 'Payment Status', 'Total (AED)', 'Date'],
         ...orders.map((o: any) => [
-          `"${o.id}"`,
-          `"${o.user?.name || 'Guest'}"`,
+          `"${o.id || ''}"`,
+          `"${o.user?.name || 'Customer'}"`,
           `"${o.user?.email || 'N/A'}"`,
-          `"${o.status}"`,
-          `"${o.paymentMethod}"`,
-          `"${o.paymentStatus}"`,
-          o.total,
-          `"${new Date(o.createdAt).toISOString()}"`,
+          `"${o.status || 'PENDING'}"`,
+          `"${o.paymentMethod || 'CARD'}"`,
+          `"${o.paymentStatus || 'COMPLETED'}"`,
+          Number(o.totalAmount ?? o.total ?? 0).toFixed(2),
+          `"${new Date(o.createdAt || Date.now()).toISOString()}"`,
         ]),
       ];
 
-      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `sheeshatonight_orders_ledger_${new Date().toISOString().substring(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
+      downloadCsv(
+        `sheeshatonight_orders_ledger_${new Date().toISOString().substring(0, 10)}.csv`,
+        rows
+      );
       showToast('Orders Ledger CSV exported successfully!', 'success');
     } catch (err) {
+      console.error('Failed to export orders CSV:', err);
       showToast('Failed to export orders ledger', 'error');
     } finally {
       setExportingType(null);
@@ -173,27 +195,23 @@ export default function AdminReportsPage() {
       const rows = [
         ['User ID', 'Name', 'Email', 'Role', 'Total Orders', 'Total Spent (AED)', 'Joined Date'],
         ...customers.map((c: any) => [
-          `"${c.id}"`,
-          `"${c.name}"`,
-          `"${c.email}"`,
-          `"${c.role}"`,
-          c.orderCount || 0,
-          (c.totalSpent || 0).toFixed(2),
-          `"${new Date(c.createdAt).toISOString()}"`,
+          `"${c.id || ''}"`,
+          `"${c.name || 'Customer'}"`,
+          `"${c.email || 'N/A'}"`,
+          `"${c.role || 'CUSTOMER'}"`,
+          c.ordersCount ?? c.orderCount ?? 0,
+          Number(c.totalSpent || 0).toFixed(2),
+          `"${new Date(c.createdAt || Date.now()).toISOString()}"`,
         ]),
       ];
 
-      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `sheeshatonight_customers_directory_${new Date().toISOString().substring(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
+      downloadCsv(
+        `sheeshatonight_customers_directory_${new Date().toISOString().substring(0, 10)}.csv`,
+        rows
+      );
       showToast('Customer Directory CSV exported successfully!', 'success');
     } catch (err) {
+      console.error('Failed to export customers CSV:', err);
       showToast('Failed to export customer directory', 'error');
     } finally {
       setExportingType(null);
@@ -461,7 +479,7 @@ export default function AdminReportsPage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-5 text-right font-black font-mono text-slate-900">
-                      AED {Number(o.total).toFixed(2)}
+                      AED {Number(o.totalAmount ?? o.total ?? 0).toFixed(2)}
                     </td>
                   </tr>
                 ))

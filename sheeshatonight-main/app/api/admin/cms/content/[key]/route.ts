@@ -3,9 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from '@/lib/middleware';
 
 // GET: Fetch CMS content by key
-export const GET = withAdmin(async (req: AuthenticatedRequest, { params }: { params: { key: string } }) => {
+export const GET = withAdmin(async (req: AuthenticatedRequest, { params }: { params: Promise<{ key: string }> | { key: string } }) => {
   try {
-    const { key } = params;
+    const { key } = await params;
     const content = await prisma.cmsContent.findUnique({
       where: { key },
     });
@@ -18,9 +18,9 @@ export const GET = withAdmin(async (req: AuthenticatedRequest, { params }: { par
 });
 
 // POST: Upsert CMS content by key
-export const POST = withAdmin(async (req: AuthenticatedRequest, { params }: { params: { key: string } }) => {
+export const POST = withAdmin(async (req: AuthenticatedRequest, { params }: { params: Promise<{ key: string }> | { key: string } }) => {
   try {
-    const { key } = params;
+    const { key } = await params;
     const body = await req.json();
 
     const content = await prisma.cmsContent.upsert({

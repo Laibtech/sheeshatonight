@@ -28,7 +28,7 @@ function defaultKeyGenerator(req: NextRequest): string {
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0] ||
     req.headers.get('x-real-ip') ||
-    req.ip ||
+
     'unknown';
   return `rate-limit:${ip}`;
 }
@@ -98,7 +98,7 @@ export const rateLimiters = {
    */
   auth: rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 5, // 5 attempts
+    maxRequests: process.env.NODE_ENV === 'production' ? 15 : 200,
   }),
 
   /**

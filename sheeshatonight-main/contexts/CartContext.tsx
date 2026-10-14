@@ -56,6 +56,47 @@ const GUEST_CART_STORAGE_KEY = 'sheeshatonight_guest_cart';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// Helper to calculate totals for an items array
+const calculateCartTotals = (items: CartItem[]): CartData => {
+  const invalidItemCount = items.filter((item) => item.price === null || isNaN(Number(item.price))).length;
+  const subtotal = items.reduce(
+    (sum, item) => sum + (item.price === null || isNaN(Number(item.price)) ? 0 : Number(item.price) * item.quantity),
+    0
+  );
+  return {
+    items,
+    subtotal,
+    total: invalidItemCount === 0 ? subtotal : 0,
+    invalidItemCount,
+  };
+};
+
+// Read guest cart from localStorage
+const loadGuestCart = (): CartData => {
+  if (typeof window === 'undefined') {
+    return { items: [], subtotal: 0, total: 0, invalidItemCount: 0 };
+  }
+  try {
+    const raw = localStorage.getItem(GUEST_CART_STORAGE_KEY);
+    if (!raw) return { items: [], subtotal: 0, total: 0, invalidItemCount: 0 };
+    const parsed: CartItem[] = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return { items: [], subtotal: 0, total: 0, invalidItemCount: 0 };
+    return calculateCartTotals(parsed);
+  } catch {
+    return { items: [], subtotal: 0, total: 0, invalidItemCount: 0 };
+  }
+};
+
+// Save guest cart to localStorage
+const saveGuestCart = (items: CartItem[]) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify(items));
+  } catch (e) {
+    console.error('Error saving guest cart:', e);
+  }
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuthContext();
   const [cart, setCart] = useState<CartData>({
@@ -68,47 +109,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Calculate item count
   const itemCount = cart.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-
-  // Helper to calculate totals for an items array
-  const calculateCartTotals = (items: CartItem[]): CartData => {
-    const invalidItemCount = items.filter((item) => item.price === null || isNaN(Number(item.price))).length;
-    const subtotal = items.reduce(
-      (sum, item) => sum + (item.price === null || isNaN(Number(item.price)) ? 0 : Number(item.price) * item.quantity),
-      0
-    );
-    return {
-      items,
-      subtotal,
-      total: invalidItemCount === 0 ? subtotal : 0,
-      invalidItemCount,
-    };
-  };
-
-  // Read guest cart from localStorage
-  const loadGuestCart = (): CartData => {
-    if (typeof window === 'undefined') {
-      return { items: [], subtotal: 0, total: 0, invalidItemCount: 0 };
-    }
-    try {
-      const raw = localStorage.getItem(GUEST_CART_STORAGE_KEY);
-      if (!raw) return { items: [], subtotal: 0, total: 0, invalidItemCount: 0 };
-      const parsed: CartItem[] = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return { items: [], subtotal: 0, total: 0, invalidItemCount: 0 };
-      return calculateCartTotals(parsed);
-    } catch {
-      return { items: [], subtotal: 0, total: 0, invalidItemCount: 0 };
-    }
-  };
-
-  // Save guest cart to localStorage
-  const saveGuestCart = (items: CartItem[]) => {
-    if (typeof window === 'undefined') return;
-    try {
-      localStorage.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify(items));
-    } catch (e) {
-      console.error('Error saving guest cart:', e);
-    }
-  };
 
   // Fetch cart data from server or localStorage
   const fetchCart = useCallback(async () => {
@@ -320,6 +320,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Remove item from cart
   const removeItem = async (itemId: string) => {
+    // Optimistically update UI immediately
+    const prevCart = cart;
+    const updatedItems = cart.items.filter((it) => it.id !== itemId);
+    setCart(calculateCartTotals(updatedItems));
+
     if (user) {
       try {
         const response = await fetch(`/api/cart/${itemId}`, {
@@ -331,24 +336,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (result.success) {
           await fetchCart();
         } else {
-          console.error('Failed to remove item:', result.error);
-          alert(result.error || 'Failed to remove item');
+          console.error('Failed to remove item from cart:', result.error);
+          setCart(prevCart);
         }
       } catch (error) {
-        console.error('Error removing item:', error);
-        alert('Failed to remove item');
+        console.error('Error removing item from cart:', error);
+        setCart(prevCart);
       }
     } else {
       // Guest cart
-      const currentGuest = loadGuestCart().items;
-      const updated = currentGuest.filter((it) => it.id !== itemId);
-      saveGuestCart(updated);
-      setCart(calculateCartTotals(updated));
+      saveGuestCart(updatedItems);
     }
   };
 
   // Clear entire cart
   const clearCart = async () => {
+    const prevCart = cart;
+    setCart({ items: [], subtotal: 0, total: 0, invalidItemCount: 0 });
+
     if (user) {
       try {
         const response = await fetch('/api/cart', {
@@ -358,21 +363,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const result = await response.json();
 
         if (result.success) {
-          setCart({ items: [], subtotal: 0, total: 0, invalidItemCount: 0 });
+          await fetchCart();
         } else {
           console.error('Failed to clear cart:', result.error);
-          alert(result.error || 'Failed to clear cart');
+          setCart(prevCart);
         }
       } catch (error) {
         console.error('Error clearing cart:', error);
-        alert('Failed to clear cart');
+        setCart(prevCart);
       }
     } else {
       // Guest cart
+      saveGuestCart([]);
       if (typeof window !== 'undefined') {
         localStorage.removeItem(GUEST_CART_STORAGE_KEY);
       }
-      setCart({ items: [], subtotal: 0, total: 0, invalidItemCount: 0 });
     }
   };
 

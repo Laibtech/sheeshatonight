@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Check, Plus, Minus, ShoppingCart } from 'lucide-react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { Check, Plus, Minus, ShoppingCart, Gem, Wind, Flame } from 'lucide-react';
 
 export default function MakeYourSheesha() {
-  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedBase, setSelectedBase] = useState('');
   const [selectedHose, setSelectedHose] = useState('');
@@ -64,40 +65,7 @@ export default function MakeYourSheesha() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md border-b border-slate-200">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-3">
-              <img src="/logo.png" alt="SheeshaTonight" className="h-12 w-auto object-contain" />
-            </Link>
-
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/" className="text-slate-700 hover:text-[#D4AF37] transition font-medium">Home</Link>
-              <Link href="/about" className="text-slate-700 hover:text-[#D4AF37] transition font-medium">About Us</Link>
-              <Link href="/rentals" className="text-slate-700 hover:text-[#D4AF37] transition font-medium">Rentals</Link>
-              <Link href="/make-your-sheesha" className="text-[#D4AF37] font-semibold">Make Your Sheesha</Link>
-              <Link href="/contact" className="text-slate-700 hover:text-[#D4AF37] transition font-medium">Contact</Link>
-            </nav>
-
-            <div className="relative">
-              <button 
-                onClick={() => setShowAccountMenu(!showAccountMenu)}
-                className="px-4 py-2 bg-[#D4AF37] text-white rounded-lg hover:bg-[#B8902A] transition font-medium"
-              >
-                Account
-              </button>
-
-              {showAccountMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-2xl py-2 z-50">
-                  <Link href="/auth/signup" className="block px-4 py-2 hover:bg-gray-50">Sign Up</Link>
-                  <Link href="/auth/login" className="block px-4 py-2 hover:bg-gray-50">Login</Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="site-page-hero site-page-hero-compact">
@@ -134,7 +102,9 @@ export default function MakeYourSheesha() {
                           : 'border-slate-200 hover:border-[#D4AF37]/50'
                       }`}
                     >
-                      <div className="text-4xl mb-3">🏺</div>
+                      <div className="flex justify-center mb-3">
+                        <Gem className="w-8 h-8 text-[#D4AF37]" />
+                      </div>
                       <h3 className="font-bold text-slate-900 mb-2">{base.name}</h3>
                       <p className="text-[#D4AF37] font-semibold">AED {base.price}</p>
                       {selectedBase === base.id && (
@@ -164,7 +134,9 @@ export default function MakeYourSheesha() {
                           : 'border-slate-200 hover:border-[#D4AF37]/50'
                       }`}
                     >
-                      <div className="text-4xl mb-3">〰️</div>
+                      <div className="flex justify-center mb-3">
+                        <Wind className="w-8 h-8 text-[#D4AF37]" />
+                      </div>
                       <h3 className="font-bold text-slate-900 mb-2">{hose.name}</h3>
                       <p className="text-[#D4AF37] font-semibold">AED {hose.price}</p>
                       {selectedHose === hose.id && (
@@ -194,7 +166,9 @@ export default function MakeYourSheesha() {
                           : 'border-slate-200 hover:border-[#D4AF37]/50'
                       }`}
                     >
-                      <div className="text-4xl mb-3">🍵</div>
+                      <div className="flex justify-center mb-3">
+                        <Flame className="w-8 h-8 text-[#D4AF37]" />
+                      </div>
                       <h3 className="font-bold text-slate-900 mb-2">{bowl.name}</h3>
                       <p className="text-[#D4AF37] font-semibold">AED {bowl.price}</p>
                       {selectedBowl === bowl.id && (
@@ -323,51 +297,8 @@ export default function MakeYourSheesha() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-lg font-bold mb-4">ABOUT US</h3>
-              <p className="text-sm text-slate-400">
-                Premium shisha rental services across UAE for all your special events.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-bold mb-4">QUICK LINKS</h3>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/about" className="text-slate-400 hover:text-[#D4AF37]">About Us</Link></li>
-                <li><Link href="/rentals" className="text-slate-400 hover:text-[#D4AF37]">Rentals</Link></li>
-                <li><Link href="/blogs" className="text-slate-400 hover:text-[#D4AF37]">Blogs</Link></li>
-                <li><Link href="/contact" className="text-slate-400 hover:text-[#D4AF37]">Contact</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-bold mb-4">SUPPORT</h3>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/faqs" className="text-slate-400 hover:text-[#D4AF37]">FAQs</Link></li>
-                <li><Link href="/privacy" className="text-slate-400 hover:text-[#D4AF37]">Privacy Policy</Link></li>
-                <li><Link href="/help" className="text-slate-400 hover:text-[#D4AF37]">Help Center</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-bold mb-4">CONTACT</h3>
-              <p className="text-sm text-slate-400 mb-2">Email: support@sheeshatonight.com</p>
-              <p className="text-sm text-slate-400 mb-2">Phone: +971 50 123 1111</p>
-              <p className="text-sm text-slate-400">Dubai, UAE</p>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center">
-            <p className="text-sm text-slate-400">
-              © 2026 <span className="text-[#D4AF37]">SheeshaTonight</span> All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      {/* Unified Global Footer */}
+      <Footer />
     </div>
   );
 }

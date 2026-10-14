@@ -61,7 +61,7 @@ export default function CartPage() {
                 <ShoppingBag size={80} />
               </div>
               <h2>Your Cart is Empty</h2>
-              <p>Looks like you haven't added anything to your cart yet.</p>
+              <p>Looks like you haven&apos;t added anything to your cart yet.</p>
               <Link href="/shop" className="shop-now-btn">
                 <ShoppingBag size={20} />
                 Start Shopping

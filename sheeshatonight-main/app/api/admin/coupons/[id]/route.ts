@@ -7,8 +7,9 @@ import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from 
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
       const body = await req.json();
@@ -25,7 +26,7 @@ export async function PUT(
       } = body;
 
       const updated = await prisma.coupon.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           ...(code ? { code: code.trim().toUpperCase() } : {}),
           ...(discountType ? { discountType } : {}),
@@ -57,14 +58,15 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async () => {
     try {
       await prisma.coupon.delete({
-        where: { id: params.id },
+        where: { id },
       });
-      return successResponse({ id: params.id }, 'Coupon deleted successfully');
+      return successResponse({ id }, 'Coupon deleted successfully');
     } catch (error) {
       console.error('Delete coupon error:', error);
       return errorResponse('Failed to delete coupon', 500);

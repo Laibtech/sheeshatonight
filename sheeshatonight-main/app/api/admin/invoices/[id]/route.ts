@@ -8,11 +8,11 @@ import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from 
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { id } = params;
 
       const invoice = await prisma.invoice.findFirst({
         where: {

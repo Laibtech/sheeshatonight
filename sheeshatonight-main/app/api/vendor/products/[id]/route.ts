@@ -25,8 +25,9 @@ async function getAuthenticatedVendor(request: Request | NextRequest) {
   return user;
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    const { id } = await params;
     const user = await getAuthenticatedVendor(request);
     if (!user) {
       return errorResponse('Vendor access required', 403);
@@ -34,7 +35,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     const product = await prisma.product.findFirst({
       where: {
-        id: params.id,
+        id,
         vendorId: user.vendor!.id,
       },
     });
@@ -50,8 +51,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    const { id } = await params;
     const user = await getAuthenticatedVendor(request);
     if (!user) {
       return errorResponse('Vendor access required', 403);
@@ -65,7 +67,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 
     const existing = await prisma.product.findFirst({
-      where: { id: params.id, vendorId: user.vendor!.id },
+      where: { id, vendorId: user.vendor!.id },
     });
 
     if (!existing) {
@@ -73,11 +75,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 
     const updated = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: partial.data,
     });
 
-    await createAuditLog(user.id, 'PRODUCT_UPDATED', 'Product', params.id, existing, updated, request as NextRequest);
+    await createAuditLog(user.id, 'PRODUCT_UPDATED', 'Product', id, existing, updated, request as NextRequest);
 
     return successResponse(updated, 'Product updated successfully');
   } catch (error) {
@@ -86,15 +88,16 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    const { id } = await params;
     const user = await getAuthenticatedVendor(request);
     if (!user) {
       return errorResponse('Vendor access required', 403);
     }
 
     const product = await prisma.product.findFirst({
-      where: { id: params.id, vendorId: user.vendor!.id },
+      where: { id, vendorId: user.vendor!.id },
     });
 
     if (!product) {
@@ -102,11 +105,11 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
 
     await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: { deletedAt: new Date(), isActive: false },
     });
 
-    await createAuditLog(user.id, 'PRODUCT_DELETED', 'Product', params.id, product, null, request as NextRequest);
+    await createAuditLog(user.id, 'PRODUCT_DELETED', 'Product', id, product, null, request as NextRequest);
 
     return successResponse(null, 'Product deleted successfully');
   } catch (error) {
@@ -115,8 +118,9 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   }
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    const { id } = await params;
     const user = await getAuthenticatedVendor(request);
     if (!user) {
       return errorResponse('Vendor access required', 403);
@@ -125,7 +129,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const { action } = await request.json();
 
     const product = await prisma.product.findFirst({
-      where: { id: params.id, vendorId: user.vendor!.id },
+      where: { id, vendorId: user.vendor!.id },
     });
 
     if (!product) {
@@ -136,7 +140,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     switch (action) {
       case 'toggle-active':
         updated = await prisma.product.update({
-          where: { id: params.id },
+          where: { id },
           data: { isActive: !product.isActive },
         });
         break;
@@ -144,7 +148,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         return errorResponse('Invalid action', 400);
     }
 
-    await createAuditLog(user.id, `PRODUCT_${action.toUpperCase()}`, 'Product', params.id, product, updated, request as NextRequest);
+    await createAuditLog(user.id, `PRODUCT_${action.toUpperCase()}`, 'Product', id, product, updated, request as NextRequest);
 
     return successResponse(updated, 'Action completed successfully');
   } catch (error) {

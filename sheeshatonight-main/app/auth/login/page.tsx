@@ -2,11 +2,9 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, Loader2, Eye, EyeOff, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, ShieldCheck, ArrowRight, Sparkles, Shield, Store, User } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { setSessionCookie } from '@/lib/session';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 function LoginContent() {
   const router = useRouter();
@@ -25,9 +23,29 @@ function LoginContent() {
     setRequestedRole(role);
   }, [searchParams]);
 
+  const handleQuickLogin = (quickEmail: string, quickPass: string) => {
+    setEmail(quickEmail);
+    setPassword(quickPass);
+    setError('');
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!normalizedEmail) {
+      setError('Please enter your email address.');
+      return;
+    }
+
+    if (!trimmedPassword) {
+      setError('Please enter your password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -37,14 +55,14 @@ function LoginContent() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: normalizedEmail, password: trimmedPassword }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 401) {
-          setError('Invalid email or password. Please try again.');
+          setError('Invalid email or password. Please verify your credentials and try again.');
         } else {
           setError(data.error || 'Unable to log in. Please check your details and try again.');
         }
@@ -52,13 +70,33 @@ function LoginContent() {
         return;
       }
 
-      const { user, token } = data;
+      const { user, token, vendor } = data;
 
       if (token) {
         localStorage.setItem('auth_token', token);
+        localStorage.setItem('user_role', user.role);
+        localStorage.setItem('user_email', user.email);
+        localStorage.setItem('user_name', user.name || 'User');
+        
+        const activeVendorName = vendor?.name || user.vendorName;
+        if (user.role === 'VENDOR' && activeVendorName) {
+          localStorage.setItem('vendor_name', activeVendorName);
+        } else {
+          localStorage.removeItem('vendor_name');
+        }
+
         if (typeof document !== 'undefined') {
-          document.cookie = `auth_token=${encodeURIComponent(token)}; path=/; max-age=604800;`;
-          document.cookie = `user_role=${encodeURIComponent(user.role)}; path=/; max-age=604800;`;
+          const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+          document.cookie = `auth_token=${encodeURIComponent(token)}; path=/; expires=${expires};`;
+          document.cookie = `user_role=${encodeURIComponent(user.role)}; path=/; expires=${expires};`;
+          document.cookie = `user_email=${encodeURIComponent(user.email)}; path=/; expires=${expires};`;
+          document.cookie = `user_name=${encodeURIComponent(user.name || 'User')}; path=/; expires=${expires};`;
+          if (user.role === 'VENDOR' && activeVendorName) {
+            document.cookie = `vendor_name=${encodeURIComponent(activeVendorName)}; path=/; expires=${expires};`;
+          } else {
+            document.cookie = `vendor_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;`;
+          }
+          document.cookie = `user_logged_in=true; path=/; expires=${expires};`;
         }
       }
 
@@ -77,18 +115,21 @@ function LoginContent() {
       });
 
       const roleRoutes: Record<string, string> = {
-        CUSTOMER: '/',
+        CUSTOMER: '/dashboard',
         VENDOR: '/vendor',
         ADMIN: '/admin',
       };
 
       const redirectParam = searchParams?.get('redirect');
-      const redirectPath = redirectParam || roleRoutes[user.role] || '/';
-      router.push(redirectPath);
+      const redirectPath = redirectParam || roleRoutes[user.role] || '/dashboard';
+      
+      // Perform full browser navigation to ensure all server layouts and auth cookies re-evaluate cleanly
+      setTimeout(() => {
+        window.location.href = redirectPath;
+      }, 150);
     } catch (err) {
       console.error('Login error:', err);
       setError('Unable to connect. Please check your backend server / internet connection.');
-    } finally {
       setLoading(false);
     }
   };
@@ -99,11 +140,16 @@ function LoginContent() {
       <header className="bg-white border-b border-slate-200 py-4 px-6">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <a href="/" className="flex items-center">
-            <img src="/logo.png" alt="SheeshaTonight" className="h-10 w-auto" />
+            <img
+              src="/logo.png"
+              alt="SheeshaTonight"
+              className="h-10 w-auto object-contain"
+              style={{ height: '40px', maxHeight: '40px', width: 'auto', objectFit: 'contain', display: 'block' }}
+            />
           </a>
           <a
             href="/"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 hover:text-[#8a277d] transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:text-[#8a277d] transition-colors"
           >
             <ArrowRight className="w-4 h-4 rotate-180" />
             <span>Back to Web</span>
@@ -112,17 +158,17 @@ function LoginContent() {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-gradient-to-b from-purple-950/5 via-slate-50 to-slate-100 relative overflow-hidden">
+      <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-gradient-to-b from-purple-950/5 via-slate-50 to-slate-100 dark:from-purple-950/20 dark:via-[#0b0b10] dark:to-[#08080c] relative overflow-hidden transition-colors duration-200">
         {/* Subtle Brand Background Accents */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-purple-900/10 rounded-full blur-3xl opacity-60" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-purple-900/10 dark:bg-purple-600/15 rounded-full blur-3xl opacity-60" />
           <div className="absolute bottom-10 right-10 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl opacity-40" />
         </div>
 
         <div className="w-full max-w-md relative z-10">
           {/* Header Badge & Title */}
           <div className="text-center mb-8">
-            <span className="inline-block text-[#8a277d] text-xs font-extrabold uppercase tracking-[2px] mb-2">
+            <span className="inline-block text-[#8a277d] dark:text-[#a83ca0] text-xs font-extrabold uppercase tracking-[2px] mb-2">
               WELCOME BACK
             </span>
             
@@ -133,30 +179,69 @@ function LoginContent() {
               <i className="w-6 h-[1px] bg-[#f5b83d]" />
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight font-serif">
-              Sign In To <span className="text-[#8a277d]">SheeshaTonight</span>
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight font-serif">
+              Sign In To <span className="text-[#8a277d] dark:text-[#f5b83d]">SheeshaTonight</span>
             </h1>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               Access your premium sheesha rentals, bookings, & marketplace orders
             </p>
           </div>
 
           {/* Card Container */}
-          <div className="bg-white border border-[#e9e4eb] rounded-2xl shadow-xl p-6 sm:p-8 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#12121a] border border-[#e9e4eb] dark:border-white/10 rounded-2xl shadow-xl p-6 sm:p-8 backdrop-blur-sm transition-colors duration-200">
             {/* Requested Role Badge */}
             {requestedRole && (
-              <div className="mb-6 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-[#8a277d] flex-shrink-0" />
-                <p className="text-xs text-purple-950">
-                  Logging in for access to <span className="font-bold uppercase text-[#8a277d]">{requestedRole}</span> portal
+              <div className="mb-6 p-3 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/40 rounded-xl flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#8a277d] dark:text-[#f5b83d] flex-shrink-0" />
+                <p className="text-xs text-purple-950 dark:text-purple-200">
+                  Logging in for access to <span className="font-bold uppercase text-[#8a277d] dark:text-[#f5b83d]">{requestedRole}</span> portal
                 </p>
               </div>
             )}
 
+            {/* Quick Demo Accounts Selection */}
+            <div className="mb-6 p-3.5 bg-gradient-to-r from-purple-50/80 to-amber-50/60 dark:from-purple-950/30 dark:to-amber-950/20 border border-purple-100/80 dark:border-purple-900/30 rounded-xl">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#8a277d] dark:text-[#f5b83d]" />
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                  Quick Demo Accounts
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('admin@sheeshatonight.com', 'admin123')}
+                  className="py-1.5 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs"
+                  title="Super Admin: admin@sheeshatonight.com / admin123"
+                >
+                  <Shield className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
+                  <span>Admin</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('vendor@sheeshatonight.com', 'vendor123')}
+                  className="py-1.5 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs"
+                  title="Vendor: vendor@sheeshatonight.com / vendor123"
+                >
+                  <Store className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
+                  <span>Vendor</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('customer@sheeshatonight.com', 'customer123')}
+                  className="py-1.5 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs"
+                  title="Customer: customer@sheeshatonight.com / customer123"
+                >
+                  <User className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
+                  <span>Customer</span>
+                </button>
+              </div>
+            </div>
+
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Email Address */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
                   Email Address <span className="text-[#8a277d]">*</span>
                 </label>
                 <div className="relative">
@@ -164,9 +249,12 @@ function LoginContent() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError('');
+                    }}
                     placeholder="Enter your email address"
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-[#8a277d] focus:ring-4 focus:ring-[#8a277d]/10 transition-all font-medium"
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-[#181824] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-[#8a277d] focus:ring-4 focus:ring-[#8a277d]/10 transition-all font-medium"
                     required
                   />
                 </div>
@@ -175,12 +263,12 @@ function LoginContent() {
               {/* Password */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Password <span className="text-[#8a277d]">*</span>
                   </label>
                   <a
                     href="/forgot-password"
-                    className="text-xs font-semibold text-[#8a277d] hover:text-[#641c5f] transition-colors"
+                    className="text-xs font-semibold text-[#8a277d] dark:text-[#f5b83d] hover:text-[#641c5f] dark:hover:text-[#e0a634] transition-colors"
                   >
                     Forgot Password?
                   </a>
@@ -190,9 +278,12 @@ function LoginContent() {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) setError('');
+                    }}
                     placeholder="Enter your password"
-                    className="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-[#8a277d] focus:ring-4 focus:ring-[#8a277d]/10 transition-all font-medium"
+                    className="w-full pl-11 pr-12 py-3 bg-slate-50 dark:bg-[#181824] border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-[#8a277d] focus:ring-4 focus:ring-[#8a277d]/10 transition-all font-medium"
                     required
                   />
                   <button
@@ -208,8 +299,8 @@ function LoginContent() {
 
               {/* Error Box */}
               {error && (
-                <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-red-700 text-xs font-medium leading-relaxed">{error}</p>
+                <div className="p-3.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-xl">
+                  <p className="text-red-700 dark:text-red-300 text-xs font-medium leading-relaxed">{error}</p>
                 </div>
               )}
 
@@ -234,12 +325,12 @@ function LoginContent() {
             </form>
 
             {/* Footer Divider & Signup Prompt */}
-            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-              <p className="text-slate-600 text-sm">
-                Don't have an account?{' '}
+            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/10 text-center">
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                Don&apos;t have an account?{' '}
                 <button
                   onClick={() => router.push(requestedRole ? `/auth/signup?role=${requestedRole}` : '/auth/signup')}
-                  className="text-[#8a277d] hover:text-[#641c5f] font-bold underline underline-offset-4 ml-1 transition-colors"
+                  className="text-[#8a277d] dark:text-[#f5b83d] hover:text-[#641c5f] dark:hover:text-[#e0a634] font-bold underline underline-offset-4 ml-1 transition-colors"
                 >
                   Create Account
                 </button>
@@ -248,15 +339,6 @@ function LoginContent() {
           </div>
         </div>
       </main>
-
-      {/* Simple Footer */}
-      <footer className="bg-white border-t border-slate-200 py-4">
-        <div className="max-w-md mx-auto text-center">
-          <p className="text-xs text-slate-500">
-            © 2026 SheeshaTonight. All rights reserved.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

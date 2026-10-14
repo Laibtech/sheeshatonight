@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
+export const dynamic = 'force-dynamic';
 
 // Default fallback banners for when database is offline or empty
 const DEFAULT_BANNERS = [
   {
     id: 'default-1',
-    heading: '🎉 New Flavors Available Now',
+    heading: 'New Flavors Available Now',
     subtitle: 'Explore our premium collection',
     ctaText: 'Shop Now',
     ctaUrl: '/shop',

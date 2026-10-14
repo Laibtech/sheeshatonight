@@ -35,14 +35,17 @@ export default function Footer() {
             </div>
 
             <div>
-              <div className="flex bg-white rounded-xl p-1.5 max-w-[500px] lg:ml-auto">
+              <div className="flex items-center bg-white rounded-2xl p-2 max-w-[540px] lg:ml-auto shadow-lg min-h-[58px] sm:min-h-[64px]">
                 <input
+                  id="footer-newsletter-email"
+                  name="footer-newsletter-email"
                   type="email"
                   placeholder="Enter your email address"
-                  className="flex-1 min-w-0 px-4 bg-transparent outline-none text-sm text-gray-700"
+                  autoComplete="email"
+                  className="flex-1 min-w-0 px-4 sm:px-6 py-3 bg-transparent outline-none text-sm sm:text-base text-gray-800 placeholder-gray-400 font-medium"
                 />
 
-                <button className="bg-[#F1A51D] hover:bg-[#d99010] text-white px-5 sm:px-7 rounded-lg text-sm font-bold transition">
+                <button className="bg-[#F1A51D] hover:bg-[#d99010] text-white px-6 sm:px-9 py-3 sm:py-3.5 rounded-xl text-sm sm:text-base font-bold transition shadow-sm hover:shadow-md shrink-0">
                   Subscribe
                 </button>
               </div>
@@ -165,7 +168,13 @@ export default function Footer() {
                 About Us
               </Link>
               <Link href="/vendors" className="block hover:text-white">
-                Become a Vendor
+                Verified Vendors
+              </Link>
+              <Link href="/auth/signup?role=vendor" className="block hover:text-white">
+                Join as Vendor
+              </Link>
+              <Link href="/vendor-support" className="block hover:text-white">
+                Vendor Support
               </Link>
               <Link href="/contact" className="block hover:text-white">
                 Contact
@@ -237,7 +246,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40 text-center sm:text-left">
             © {new Date().getFullYear()} SheeshaTonight. All rights reserved.
           </p>
@@ -248,6 +257,20 @@ export default function Footer() {
             </span>
             For adults only. Please enjoy responsibly.
           </div>
+        </div>
+
+        <div className="border-t border-white/5 bg-black/20 py-3 pb-20 md:pb-3">
+          <p className="text-[11.5px] text-white/50 text-center tracking-wide">
+            Web designed and managed by{" "}
+            <a
+              href="https://wwmcltd.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#F1A51D] hover:text-white font-semibold transition-colors underline underline-offset-2"
+            >
+              WWMC LTD
+            </a>
+          </p>
         </div>
       </div>
     </footer>

@@ -196,7 +196,7 @@ export default function ProductPage() {
   return (
     <>
       <Header />
-      <main className="product-page">
+      <main className="product-page" suppressHydrationWarning>
         {/* BREADCRUMB */}
         <section className="breadcrumb-section">
           <div className="product-container">
@@ -273,7 +273,7 @@ export default function ProductPage() {
                 {/* VENDOR BRAND TAG */}
                 <div>
                   <span className="vendor-tag">
-                    {product.brand || product.vendor || "SULTAN SHISHA LOUNGE"}
+                    {product.brand || product.vendor || "Verified UAE Vendor"}
                   </span>
                 </div>
 
@@ -329,11 +329,11 @@ export default function ProductPage() {
                       <div className="vendor-meta-title">Provided by Verified Vendor</div>
                       {product.vendorId ? (
                         <Link href={`/vendors/${product.vendorId}`} className="vendor-meta-name">
-                          {product.vendor || "Sultan Shisha Lounge"}
+                          {product.vendor || "Official Marketplace Partner"}
                         </Link>
                       ) : (
                         <span className="vendor-meta-name" style={{ color: "#0f172a" }}>
-                          {product.vendor || "Sultan Shisha Lounge"}
+                          {product.vendor || "Official Marketplace Partner"}
                         </span>
                       )}
                     </div>

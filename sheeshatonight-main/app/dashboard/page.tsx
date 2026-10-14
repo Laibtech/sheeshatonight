@@ -3,6 +3,22 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/store";
+import {
+  ShoppingBag,
+  Heart,
+  MapPin,
+  CreditCard,
+  Flame,
+  Package,
+  Star,
+  Edit3,
+  ChevronRight,
+  HelpCircle,
+  ShieldCheck,
+  Sparkles,
+  ArrowRight,
+  Settings,
+} from "lucide-react";
 import "./CustomerDashboard.css";
 
 
@@ -24,7 +40,7 @@ const fallbackOrders = [
 ];
 
 export default function CustomerDashboard() {
-  const { userName, userEmail } = useAuthStore();
+  const { userName, userEmail, userRole } = useAuthStore();
 
   const [customerName, setCustomerName] = useState("Sara Ahmed");
   const [customerEmail, setCustomerEmail] = useState("sara.ahmed@email.com");
@@ -83,7 +99,7 @@ export default function CustomerDashboard() {
         const orderList = Array.isArray(data) ? data : data?.orders || data?.data;
         if (Array.isArray(orderList) && orderList.length > 0) {
           const mapped = orderList.slice(0, 5).map((ord: any) => ({
-            id: `#${ord.orderNumber || (ord.id || "").slice(-6).toUpperCase()}`,
+            id: ord.orderNumber ? `#${ord.orderNumber}` : `#ST-${(ord.id || "").slice(-4).toUpperCase()}`,
             date: new Date(ord.createdAt || Date.now()).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -109,7 +125,7 @@ export default function CustomerDashboard() {
         {/* WELCOME */}
         <section className="welcome-section">
           <h1>
-            Welcome back, {customerName.split(" ")[0]} <span>👋</span>
+            Welcome back, {customerName.split(" ")[0]} <Sparkles size={20} style={{ display: "inline", color: "#F1A51D", verticalAlign: "middle" }} />
           </h1>
           <p>Here&apos;s what&apos;s happening with your account today.</p>
         </section>
@@ -117,7 +133,7 @@ export default function CustomerDashboard() {
         {/* STATS */}
         <section className="stats-grid">
           <StatCard
-            icon="▣"
+            icon={<ShoppingBag size={18} />}
             title="Total Orders"
             value={String(orders.length > 0 ? orders.length : 2)}
             link="View Orders"
@@ -125,7 +141,7 @@ export default function CustomerDashboard() {
           />
 
           <StatCard
-            icon="♡"
+            icon={<Heart size={18} />}
             title="Wishlist Items"
             value="12"
             link="View Wishlist"
@@ -133,7 +149,7 @@ export default function CustomerDashboard() {
           />
 
           <StatCard
-            icon="⌖"
+            icon={<MapPin size={18} />}
             title="Saved Addresses"
             value="2"
             link="Manage Addresses"
@@ -141,7 +157,7 @@ export default function CustomerDashboard() {
           />
 
           <StatCard
-            icon="▤"
+            icon={<CreditCard size={18} />}
             title="Payment Methods"
             value="1"
             link="Manage Payments"
@@ -169,7 +185,7 @@ export default function CustomerDashboard() {
 
             <Link href="/shop" className="primary-btn">
               Shop Now
-              <span>→</span>
+              <ArrowRight size={16} />
             </Link>
           </div>
 
@@ -190,7 +206,7 @@ export default function CustomerDashboard() {
             <h2>Recent Orders</h2>
 
             <Link href="/dashboard/orders" className="view-link">
-              View All Orders →
+              View All Orders <ArrowRight size={14} style={{ display: "inline", verticalAlign: "middle" }} />
             </Link>
           </div>
 
@@ -211,10 +227,9 @@ export default function CustomerDashboard() {
                 <span>{order.date}</span>
 
                 <div className="order-items">
-                  <div className="mini-product">♨</div>
-                  <div className="mini-product">♨</div>
-                  <div className="mini-product">●</div>
-                  <div className="mini-product">▣</div>
+                  <div className="mini-product"><Flame size={12} className="text-purple-600" /></div>
+                  <div className="mini-product"><Package size={12} className="text-amber-600" /></div>
+                  <div className="mini-product"><ShoppingBag size={12} className="text-emerald-600" /></div>
 
                   <span className="more-items">+{index + 1}</span>
                 </div>
@@ -228,7 +243,7 @@ export default function CustomerDashboard() {
                 </span>
 
                 <Link href="/dashboard/orders" className="order-arrow">
-                  →
+                  <ChevronRight size={14} />
                 </Link>
               </div>
             ))}
@@ -241,7 +256,7 @@ export default function CustomerDashboard() {
             <h2>Recommended For You</h2>
 
             <Link href="/shop" className="view-link">
-              View All →
+              View All <ArrowRight size={14} style={{ display: "inline", verticalAlign: "middle" }} />
             </Link>
           </div>
 
@@ -249,7 +264,7 @@ export default function CustomerDashboard() {
             {products.map((product) => (
               <div className="product-card" key={product.name}>
                 <button type="button" className="favorite" title="Save to wishlist">
-                  ♡
+                  <Heart size={15} />
                 </button>
 
                 <Link href="/shop" className="product-image">
@@ -267,8 +282,12 @@ export default function CustomerDashboard() {
                 <strong className="product-price">{product.price}</strong>
 
                 <div className="rating">
-                  <span>★★★★★</span>
-                  <small>({product.reviews})</small>
+                  <div style={{ display: "inline-flex", gap: "2px", alignItems: "center" }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} size={11} fill="#EFB63B" color="#EFB63B" />
+                    ))}
+                  </div>
+                  <small style={{ marginLeft: "4px" }}>({product.reviews})</small>
                 </div>
               </div>
             ))}
@@ -296,45 +315,48 @@ export default function CustomerDashboard() {
           </div>
 
           <Link href="/dashboard/settings" className="edit-profile">
-            ✎ &nbsp; Edit Profile
+            <Edit3 size={13} style={{ display: "inline", marginRight: "6px" }} />
+            Edit Profile
           </Link>
 
           <div className="profile-links">
             <Link href="/dashboard/orders">
-              <span>▣</span>
+              <span><ShoppingBag size={14} /></span>
               Order History
-              <b>›</b>
+              <b><ChevronRight size={13} /></b>
             </Link>
 
             <Link href="/dashboard/wishlist">
-              <span>♡</span>
+              <span><Heart size={14} /></span>
               My Wishlist
-              <b>›</b>
+              <b><ChevronRight size={13} /></b>
             </Link>
 
             <Link href="/dashboard/settings">
-              <span>⌖</span>
+              <span><MapPin size={14} /></span>
               Saved Addresses
-              <b>›</b>
+              <b><ChevronRight size={13} /></b>
             </Link>
 
             <Link href="/dashboard/settings">
-              <span>▤</span>
+              <span><CreditCard size={14} /></span>
               Payment Methods
-              <b>›</b>
+              <b><ChevronRight size={13} /></b>
             </Link>
 
             <Link href="/dashboard/settings">
-              <span>⚙</span>
+              <span><Settings size={14} /></span>
               Settings
-              <b>›</b>
+              <b><ChevronRight size={13} /></b>
             </Link>
           </div>
         </section>
 
         {/* SUPPORT */}
         <section className="support-card">
-          <div className="support-icon">♧</div>
+          <div className="support-icon">
+            <HelpCircle size={20} color="#822576" />
+          </div>
 
           <div>
             <h3>Need Help?</h3>
@@ -346,7 +368,7 @@ export default function CustomerDashboard() {
             </p>
 
             <Link href="/contact">
-              Contact Support →
+              Contact Support <ArrowRight size={14} style={{ display: "inline", verticalAlign: "middle" }} />
             </Link>
           </div>
         </section>
@@ -363,7 +385,7 @@ export default function CustomerDashboard() {
             </p>
 
             <Link href="/vendors">
-              Learn More →
+              Learn More <ArrowRight size={14} style={{ display: "inline", verticalAlign: "middle" }} />
             </Link>
           </div>
 
@@ -390,7 +412,7 @@ function StatCard({
   href = "/dashboard",
   gold = false,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   value: string;
   link: string;
@@ -407,7 +429,7 @@ function StatCard({
       </div>
 
       <Link href={href}>
-        {link} →
+        {link} <ArrowRight size={14} style={{ display: "inline", verticalAlign: "middle" }} />
       </Link>
     </div>
   );

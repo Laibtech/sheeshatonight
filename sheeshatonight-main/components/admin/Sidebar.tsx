@@ -53,19 +53,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({
-    Orders: true,
-    Products: false,
-    Vendors: false,
-    Customers: false,
-  });
+  const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
 
   const toggleSubMenu = (title: string) => {
     if (collapsed) return;
-    setOpenSubMenus((prev) => ({ ...prev, [title]: !prev[title] }));
+    setOpenSubMenu((prev) => (prev === title ? null : title));
   };
 
-  const navItems: NavSection[] = [
+  const navItems: NavSection[] = React.useMemo(() => [
     {
       title: 'Dashboard',
       href: '/admin',
@@ -105,7 +100,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { title: 'All Vendors', href: '/admin/vendors' },
         { title: 'Pending Vendors', href: '/admin/vendors?status=pending' },
         { title: 'Vendor Documents', href: '/admin/vendors/documents' },
-        { title: 'Settlements', href: '/admin/settlements' },
       ],
     },
     {
@@ -115,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       subItems: [
         { title: 'All Customers', href: '/admin/customers' },
         { title: 'Customer Reviews', href: '/admin/reviews' },
-        { title: 'Wishlist Activity', href: '/admin/customers?tab=wishlist' },
+        { title: 'Wishlist Activity', href: '/admin/wishlist' },
       ],
     },
     {
@@ -124,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Tag,
       subItems: [
         { title: 'Coupons', href: '/admin/coupons' },
-        { title: 'Banners', href: '/admin/cms/banners' },
+        { title: 'Promotions', href: '/admin/coupons?tab=promotions' },
       ],
     },
     {
@@ -140,9 +134,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'Finance',
-      href: '/admin/invoices',
+      href: '/admin/finance',
       icon: DollarSign,
       subItems: [
+        { title: 'Overview & Commission', href: '/admin/finance' },
         { title: 'Invoices', href: '/admin/invoices' },
         { title: 'Settlements', href: '/admin/settlements' },
       ],
@@ -168,66 +163,107 @@ export const Sidebar: React.FC<SidebarProps> = ({
       href: '/admin/settings',
       icon: Settings,
     },
-  ];
+  ], [pendingCounts.orders, pendingCounts.vendors, pendingCounts.notifications]);
+
+  // Compute the single best matching active href across the navigation
+  const activeHref = React.useMemo(() => {
+    let bestHref: string | null = null;
+    let bestScore = -1;
+
+    const allHrefs: string[] = [];
+    navItems.forEach((item) => {
+      if (item.subItems && item.subItems.length > 0) {
+        item.subItems.forEach((sub) => allHrefs.push(sub.href));
+      } else {
+        allHrefs.push(item.href);
+      }
+    });
+
+    const currentQueryString = searchParams.toString();
+
+    for (const href of allHrefs) {
+      const [path, query] = href.split('?');
+      if (!path) continue;
+
+      let score = -1;
+
+      if (path === '/admin') {
+        if (pathname === '/admin') {
+          score = 1000;
+        }
+      } else if (pathname === path) {
+        if (query) {
+          const [key, val] = query.split('=');
+          if (key && searchParams.get(key) === (val || '')) {
+            score = 1000 + href.length;
+          }
+        } else if (!currentQueryString) {
+          score = 800 + href.length;
+        } else {
+          score = 600 + href.length;
+        }
+      } else if (pathname.startsWith(path + '/') && path !== '/admin') {
+        score = 200 + path.length;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestHref = href;
+      }
+    }
+
+    return bestHref;
+  }, [pathname, searchParams, navItems]);
 
   const isLinkActive = (href: string) => {
-    const [path, query] = href.split('?');
-    if (!path) return false;
-    if (path === '/admin') {
-      return pathname === '/admin';
-    }
-    if (pathname === path) {
-      if (!query) {
-        // If current url has no search params or not matching
-        return !searchParams.toString();
-      }
-      const [paramKey, paramVal] = query.split('=');
-      if (!paramKey) return false;
-      return searchParams.get(paramKey) === (paramVal || '');
-    }
-    return Boolean(pathname?.startsWith(path) && !query);
+    return activeHref === href;
   };
-
 
   const isParentActive = (item: NavSection) => {
     if (item.href === '/admin') return pathname === '/admin';
-    if (pathname.startsWith(item.href)) return true;
+    if (activeHref === item.href) return true;
     if (item.subItems) {
-      return item.subItems.some((sub) => pathname === sub.href.split('?')[0]);
+      return item.subItems.some((sub) => sub.href === activeHref);
     }
     return false;
   };
 
+  // Automatically keep the active route's parent accordion open
+  React.useEffect(() => {
+    const parent = navItems.find((item) =>
+      item.subItems?.some((sub) => sub.href === activeHref)
+    );
+    if (parent) {
+      setOpenSubMenu(parent.title);
+    }
+  }, [activeHref, navItems]);
+
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-[#E9E3EB] select-none">
       {/* Brand Header */}
-      <div className="h-16 px-5 border-b border-[#E9E3EB] flex items-center justify-between">
+      <div className="h-16 px-4 border-b border-[#E9E3EB] flex items-center justify-between">
         {!collapsed ? (
-          <Link href="/admin" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#74189B] to-[#571275] flex items-center justify-center text-white font-black text-xs shadow-xs border border-purple-800">
-              ST
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-sm text-[#29252B] tracking-tight">
-                  SheeshaTonight
-                </span>
-                <span className="text-[10px] px-1.5 py-0.2 bg-[#F1A51D]/15 text-[#9E6500] font-black rounded-sm">
-                  ADMIN
-                </span>
-              </div>
-              <p className="text-[10px] font-bold text-[#74189B] tracking-wider uppercase">
-                Operations & CMS
-              </p>
-            </div>
+          <Link href="/admin" className="flex items-center gap-2.5 group">
+            <img
+              src="/logo.png"
+              alt="SheeshaTonight"
+              className="h-10 w-auto object-contain max-w-[140px]"
+            />
+            <span className="text-[10px] px-1.5 py-0.5 bg-[#F1A51D]/15 text-[#9E6500] font-black rounded-md uppercase tracking-wider border border-[#F1A51D]/30 shadow-2xs">
+              ADMIN
+            </span>
           </Link>
         ) : (
           <Link
             href="/admin"
-            className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#74189B] to-[#571275] flex items-center justify-center text-white font-black text-xs mx-auto shadow-xs border border-purple-800"
+            className="w-10 h-10 flex items-center justify-center mx-auto"
             title="SheeshaTonight Admin"
           >
-            ST
+            <img
+              src="/logo.png"
+              alt="SheeshaTonight"
+              className="h-8 w-8 object-contain"
+            />
           </Link>
         )}
 
@@ -247,7 +283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           const Icon = item.icon;
           const hasSubItems = item.subItems && item.subItems.length > 0;
           const parentActive = isParentActive(item);
-          const isOpen = openSubMenus[item.title] || false;
+          const isOpen = openSubMenu === item.title;
 
           return (
             <div key={item.title} className="space-y-0.5">

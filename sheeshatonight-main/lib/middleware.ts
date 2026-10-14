@@ -32,6 +32,9 @@ export function getTokenFromRequest(req: NextRequest): string | null {
 export function withAuth(handler: (req: AuthenticatedRequest, ...args: any[]) => Promise<NextResponse>) {
   return async (req: AuthenticatedRequest, ...args: any[]) => {
     try {
+      if (args[0]?.params && typeof args[0].params.then === 'function') {
+        args[0].params = await args[0].params;
+      }
       const token = getTokenFromRequest(req);
 
       if (!token) {
@@ -155,25 +158,75 @@ export function successResponse(data: any, messageOrStatus: string | number = 20
 /**
  * Set auth cookie
  */
-export function setAuthCookie(token: string, response: NextResponse, role?: string) {
+export function setAuthCookie(
+  token: string,
+  response: NextResponse,
+  roleOrUser?: string | { email?: string; name?: string; role?: string; vendorName?: string }
+) {
+  const isProd = process.env.NODE_ENV === 'production';
   response.cookies.set('auth_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProd,
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7, // 7 days
     path: '/',
   });
   
+  const role = typeof roleOrUser === 'string' ? roleOrUser : roleOrUser?.role;
+  const email = typeof roleOrUser === 'object' ? roleOrUser?.email : undefined;
+  const name = typeof roleOrUser === 'object' ? roleOrUser?.name : undefined;
+  const vendorName = typeof roleOrUser === 'object' ? roleOrUser?.vendorName : undefined;
+
   // Also set user_role cookie for client-side routing
   if (role) {
     response.cookies.set('user_role', role, {
       httpOnly: false, // Allow JavaScript to read this
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });
   }
+
+  if (email) {
+    response.cookies.set('user_email', email, {
+      httpOnly: false,
+      secure: isProd,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+  }
+
+  if (name) {
+    response.cookies.set('user_name', encodeURIComponent(name), {
+      httpOnly: false,
+      secure: isProd,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+  }
+
+  if (vendorName) {
+    response.cookies.set('vendor_name', encodeURIComponent(vendorName), {
+      httpOnly: false,
+      secure: isProd,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+  } else if (role !== 'VENDOR') {
+    response.cookies.delete('vendor_name');
+  }
+
+  response.cookies.set('user_logged_in', 'true', {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7,
+    path: '/',
+  });
   
   return response;
 }
@@ -182,18 +235,51 @@ export function setAuthCookie(token: string, response: NextResponse, role?: stri
  * Clear auth cookie
  */
 export function clearAuthCookie(response: NextResponse) {
+  const isProd = process.env.NODE_ENV === 'production';
+  
   response.cookies.set('auth_token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProd,
     sameSite: 'lax',
     maxAge: 0,
     path: '/',
   });
   
-  // Also clear user_role cookie
   response.cookies.set('user_role', '', {
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/',
+  });
+
+  response.cookies.set('user_email', '', {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/',
+  });
+
+  response.cookies.set('user_name', '', {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/',
+  });
+
+  response.cookies.set('vendor_name', '', {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/',
+  });
+
+  response.cookies.set('user_logged_in', '', {
+    httpOnly: false,
+    secure: isProd,
     sameSite: 'lax',
     maxAge: 0,
     path: '/',

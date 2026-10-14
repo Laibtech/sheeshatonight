@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from "next/link";
 import {
   ArrowRight,
@@ -7,10 +8,29 @@ import {
   Truck,
   Headphones,
   CheckCircle2,
+  Heart,
 } from "lucide-react";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { createMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = createMetadata({
+  title: 'SheeshaTonight | Premium Luxury Sheesha Rental & Tobacco Marketplace Dubai',
+  description:
+    'Experience luxury on-demand sheesha delivery and event catering in Dubai & UAE. Handcrafted German & Russian pipes, exotic flavors, and white-glove sommelier masters.',
+  keywords: [
+    'sheesha rental dubai',
+    'shisha delivery uae',
+    'luxury hookah hire',
+    'yacht sheesha service dubai',
+    'private party sheesha master',
+    'buy sheesha dubai',
+    'sheesha tonight',
+  ],
+  path: '/',
+  image: '/hero-banner.png',
+});
 
 const categories = [
   {
@@ -209,7 +229,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 sm:py-24 bg-white">
+      <section className="py-12 sm:py-16 bg-white">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-10">
             <div>
@@ -266,7 +286,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 sm:py-24 bg-[#FAF8FB]">
+      <section className="py-12 sm:py-16 bg-[#FAF8FB]">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-10">
             <div>
@@ -305,8 +325,11 @@ export default async function HomePage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                   />
 
-                  <button className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 flex items-center justify-center hover:bg-white">
-                    ♡
+                  <button 
+                    aria-label="Add to wishlist"
+                    className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 flex items-center justify-center hover:bg-white text-gray-500 hover:text-rose-500 transition"
+                  >
+                    <Heart size={16} />
                   </button>
                 </div>
 
@@ -357,7 +380,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 sm:py-24 bg-white">
+      <section className="py-12 sm:py-16 bg-white">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-[650px] mx-auto mb-12">
             <span className="text-[#74189B] text-[11px] uppercase tracking-[3px] font-bold">
@@ -405,7 +428,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 sm:py-24 bg-[#F8F2FA]">
+      <section className="py-12 sm:py-16 bg-[#F8F2FA]">
         <div className="max-w-[1100px] mx-auto px-5 sm:px-8">
           <div className="text-center mb-14">
             <span className="text-[#74189B] text-[11px] uppercase tracking-[3px] font-bold">
@@ -453,7 +476,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="py-20 sm:py-24 bg-white">
+      <section className="py-12 sm:py-16 bg-white">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-5">
             <div className="rounded-2xl border border-gray-100 p-7">
@@ -491,7 +514,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="px-4 sm:px-6 lg:px-8 pb-20 sm:pb-24">
+      <section className="px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
         <div className="max-w-[1440px] mx-auto rounded-[30px] overflow-hidden relative min-h-[360px] flex items-center bg-cover bg-center" style={{ backgroundImage: "url('/made%20for%20dubai.webp')" }}>
           <div className="absolute inset-0 bg-gradient-to-r from-[#4a0d5c]/85 via-[#4a0d5c]/70 to-[#4a0d5c]/30" />
 

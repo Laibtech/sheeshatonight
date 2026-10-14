@@ -8,12 +8,13 @@ import { VendorTier } from '@prisma/client';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async () => {
     try {
       const vendor = await prisma.vendor.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: {
           user: {
             select: {
@@ -97,15 +98,16 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
       const body = await req.json();
       const { name, tier, isActive, description, location, phone } = body;
 
       const updated = await prisma.vendor.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           ...(name ? { name } : {}),
           ...(tier ? { tier: tier as VendorTier } : {}),
@@ -130,11 +132,11 @@ export async function PUT(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { id } = params;
       const body = await req.json();
       const action = body.action;
 

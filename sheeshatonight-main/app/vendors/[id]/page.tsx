@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -63,13 +63,8 @@ export default function VendorStorePage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
 
-  useEffect(() => {
-    if (vendorId) {
-      fetchVendorStore();
-    }
-  }, [vendorId]);
-
-  const fetchVendorStore = async () => {
+  const fetchVendorStore = useCallback(async () => {
+    if (!vendorId) return;
     try {
       setLoading(true);
       const res = await fetch(`/api/vendors/${vendorId}`);
@@ -83,7 +78,11 @@ export default function VendorStorePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [vendorId]);
+
+  useEffect(() => {
+    fetchVendorStore();
+  }, [fetchVendorStore]);
 
   if (loading) {
     return (

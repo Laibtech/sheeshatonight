@@ -37,12 +37,13 @@ function parseLocation(loc: any): string {
 // GET - Fetch single vendor by ID or slug
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    const { id } = await params;
     const vendor = await prisma.vendor.findFirst({
       where: {
-        OR: [{ id: params.id }, { slug: params.id }],
+        OR: [{ id }, { slug: id }],
       },
       include: {
         user: {

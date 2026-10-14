@@ -6,16 +6,27 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { clearSessionCookie } from '@/lib/session';
 import { useCart } from '@/contexts/CartContext';
+import {
+  Search,
+  MapPin,
+  ChevronDown,
+  Heart,
+  ShoppingBag,
+  LayoutDashboard,
+  Calendar,
+  Settings,
+  HelpCircle,
+  Crown,
+  Sparkles,
+  Shield,
+  ExternalLink,
+} from 'lucide-react';
 import '@/app/dashboard/CustomerDashboard.css';
-
-function Icon({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <span className={`icon ${className}`}>{children}</span>;
-}
 
 export function CustomerPortalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { userName, userEmail, logout } = useAuthStore();
+  const { userName, userEmail, userRole, logout } = useAuthStore();
   const { itemCount } = useCart();
 
   const [mounted, setMounted] = useState(false);
@@ -74,17 +85,25 @@ export function CustomerPortalLayout({ children }: { children: React.ReactNode }
       <header className="dashboard-header">
         <div className="brand">
           <Link href="/">
-            <img src="/logo.png" alt="SheeshaTonight" />
+            <img
+              src="/logo.png"
+              alt="SheeshaTonight"
+              className="h-9 w-auto object-contain"
+              style={{ height: '36px', maxHeight: '36px', width: 'auto', objectFit: 'contain', display: 'block' }}
+            />
           </Link>
         </div>
 
         <form onSubmit={handleSearchSubmit} className="header-search">
-          <span>⌕</span>
+          <Search size={15} className="text-slate-400 flex-shrink-0" />
           <input
+            id="customer-portal-search-input"
+            name="customer-portal-search"
             type="text"
             placeholder="Search for sheesha products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            autoComplete="off"
           />
         </form>
 
@@ -95,9 +114,9 @@ export function CustomerPortalLayout({ children }: { children: React.ReactNode }
               onClick={() => setShowLocationMenu(!showLocationMenu)}
               className="location-selector"
             >
-              <span>⌖</span>
-              {selectedLocation}
-              <span className="arrow">⌄</span>
+              <MapPin size={13} className="text-[#822576] flex-shrink-0" />
+              <span>{selectedLocation}</span>
+              <ChevronDown size={12} className="text-slate-400 flex-shrink-0" />
             </button>
 
             {showLocationMenu && (
@@ -120,12 +139,12 @@ export function CustomerPortalLayout({ children }: { children: React.ReactNode }
           </div>
 
           <Link href="/dashboard/wishlist" className="header-icon" title="Wishlist">
-            ♡
+            <Heart size={18} className="text-[#211D24]" />
           </Link>
 
           <Link href="/cart" className="header-icon cart" title="View Cart">
-            🛒
-            <small>{mounted && itemCount > 0 ? itemCount : 3}</small>
+            <ShoppingBag size={18} className="text-[#211D24]" />
+            {mounted && itemCount > 0 && <small>{itemCount}</small>}
           </Link>
 
           <div className="relative">
@@ -140,20 +159,17 @@ export function CustomerPortalLayout({ children }: { children: React.ReactNode }
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-
-              <div>
-                <strong>{customerName}</strong>
-              </div>
-
-              <span>⌄</span>
+              <span>{customerName}</span>
+              <ChevronDown size={12} className="text-slate-400 flex-shrink-0" />
             </div>
 
             {showUserMenu && (
-              <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="px-4 py-2 border-b border-slate-100">
-                  <p className="text-xs font-bold text-slate-800">{customerName}</p>
-                  <p className="text-[11px] text-slate-400 truncate">{customerEmail}</p>
+                  <p className="text-xs font-bold text-slate-800 truncate">{customerName}</p>
+                  <p className="text-[10px] text-slate-500 truncate">{customerEmail}</p>
                 </div>
+
                 <Link
                   href="/dashboard"
                   onClick={() => setShowUserMenu(false)}
@@ -201,38 +217,40 @@ export function CustomerPortalLayout({ children }: { children: React.ReactNode }
         <aside className="sidebar">
           <nav className="sidebar-nav">
             <Link href="/dashboard" className={isNavActive('/dashboard') && pathname === '/dashboard' ? 'active' : ''}>
-              <Icon>⌂</Icon>
+              <span className="icon"><LayoutDashboard size={17} /></span>
               Dashboard
             </Link>
 
             <Link href="/dashboard/orders" className={isNavActive('/dashboard/orders') ? 'active' : ''}>
-              <Icon>▣</Icon>
+              <span className="icon"><ShoppingBag size={17} /></span>
               My Orders
             </Link>
 
             <Link href="/dashboard/wishlist" className={isNavActive('/dashboard/wishlist') ? 'active' : ''}>
-              <Icon>♡</Icon>
+              <span className="icon"><Heart size={17} /></span>
               Wishlist
             </Link>
 
             <Link href="/dashboard/bookings" className={isNavActive('/dashboard/bookings') ? 'active' : ''}>
-              <Icon>⌖</Icon>
+              <span className="icon"><Calendar size={17} /></span>
               Bookings
             </Link>
 
             <Link href="/dashboard/settings" className={isNavActive('/dashboard/settings') ? 'active' : ''}>
-              <Icon>⚙</Icon>
+              <span className="icon"><Settings size={17} /></span>
               Settings
             </Link>
 
             <Link href="/contact" className={pathname === '/contact' ? 'active' : ''}>
-              <Icon>?</Icon>
+              <span className="icon"><HelpCircle size={17} /></span>
               Support
             </Link>
           </nav>
 
           <div className="sidebar-promo">
-            <div className="promo-icon">♛</div>
+            <div className="promo-icon">
+              <Crown size={22} color="#EFB63B" />
+            </div>
 
             <h3>
               Premium Sheesha
@@ -242,7 +260,9 @@ export function CustomerPortalLayout({ children }: { children: React.ReactNode }
 
             <p>Quality. Authenticity. Luxury.</p>
 
-            <div className="gold-line">◆</div>
+            <div className="gold-line">
+              <Sparkles size={14} color="#EFB63B" />
+            </div>
           </div>
         </aside>
 

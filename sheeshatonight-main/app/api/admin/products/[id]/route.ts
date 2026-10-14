@@ -3,17 +3,20 @@ import { prisma } from '@/lib/prisma';
 import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from '@/lib/middleware';
 import { ProductType } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admin/products/[id]
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async () => {
     try {
       const product = await prisma.product.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: {
           vendor: {
             select: {
@@ -47,8 +50,9 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
       const body = await req.json();
@@ -67,7 +71,7 @@ export async function PUT(
       } = body;
 
       const updated = await prisma.product.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           ...(title ? { title } : {}),
           ...(description !== undefined ? { description } : {}),
@@ -102,11 +106,11 @@ export async function PUT(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { id } = params;
       const body = await req.json();
       const { action } = body;
 
@@ -163,11 +167,11 @@ export async function POST(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
-      const { id } = params;
       const body = await req.json();
 
       const product = await prisma.product.findUnique({
@@ -218,26 +222,27 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  const { id } = await params;
   return withAdmin(async () => {
     try {
       // First attempt hard delete
       await prisma.product.delete({
-        where: { id: params.id },
+        where: { id },
       });
-      return successResponse({ id: params.id }, 'Product permanently deleted');
+      return successResponse({ id }, 'Product permanently deleted');
     } catch (error: any) {
       // If product has references in orders/cart/reviews, safely soft-delete
       try {
         await prisma.product.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             deletedAt: new Date(),
             isActive: false,
           },
         });
-        return successResponse({ id: params.id }, 'Product deleted and removed from catalogue');
+        return successResponse({ id }, 'Product deleted and removed from catalogue');
       } catch (softErr: any) {
         console.error('Delete product error:', softErr);
         return errorResponse('Failed to delete product', 500);

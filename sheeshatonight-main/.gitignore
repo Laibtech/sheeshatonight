@@ -2,10 +2,12 @@ node_modules/
 .next/
 dist/
 build/
-*.env
-*.env.local
+*.env*
+.env*
 .DS_Store
 .vscode/
 .idea/
 *.log
 .vercel
+backups/
+*.bak

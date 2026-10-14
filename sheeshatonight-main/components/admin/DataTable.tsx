@@ -61,10 +61,13 @@ export function DataTable<T extends Record<string, any>>({
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-[#716975] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
+              id="admin-datatable-search-input"
+              name="admin-datatable-search-input"
               type="text"
               value={searchValue || ''}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
+              autoComplete="off"
               className="w-full pl-10 pr-4 py-2 bg-white border border-[#E9E3EB] rounded-xl text-xs text-[#29252B] placeholder:text-[#716975] focus:outline-none focus:border-[#74189B] transition"
             />
           </div>

@@ -94,6 +94,7 @@ export const GET = withAdmin(async (req: AuthenticatedRequest) => {
       cancelledOrders,
       pendingVendors,
       lowStockProducts,
+      lowStockCount: lowStockProducts,
       pendingReviews,
       activeProducts,
       averageOrderValue: totalOrders > 0 ? Math.round((totalRevenue / totalOrders) * 100) / 100 : 0,

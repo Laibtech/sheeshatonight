@@ -145,7 +145,7 @@ export default function AccessoriesPage() {
       <Header />
       <main className="category-page">
         {/* HERO */}
-        <section className="category-hero">
+        <section className="category-hero hero-accessories">
           <div className="category-hero-content">
             <Link href="/" className="category-back-link">
               ← Back to Home
@@ -272,6 +272,7 @@ export default function AccessoriesPage() {
                       alt={accessory.name}
                       fill
                       sizes="(max-width: 768px) 50vw, 25vw"
+                      unoptimized
                     />
                     <button
                       className="category-favorite"

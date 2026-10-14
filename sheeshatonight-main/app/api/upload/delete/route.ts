@@ -10,6 +10,13 @@ import { withAuth, AuthenticatedRequest } from '@/lib/middleware';
  */
 export const DELETE = withAuth(async (req: AuthenticatedRequest) => {
   try {
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'VENDOR') {
+      return NextResponse.json(
+        { error: 'Forbidden: Admin or Vendor permissions required to delete assets' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { urls } = body;
 
@@ -25,12 +32,18 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest) => {
     for (const url of urls) {
       try {
         // Extract filename from URL (e.g., /uploads/products/filename.jpg)
-        if (!url.startsWith('/uploads/products/')) {
+        if (!url || typeof url !== 'string' || !url.startsWith('/uploads/products/')) {
           results.push({ url, success: false, error: 'Invalid URL format' });
           continue;
         }
 
         const filename = path.basename(url);
+        // Ensure strictly alphanumeric with safe characters to prevent directory traversal
+        if (!/^[a-zA-Z0-9_\-\.]+$/.test(filename)) {
+          results.push({ url, success: false, error: 'Invalid filename' });
+          continue;
+        }
+
         const filepath = path.join(process.cwd(), 'public', 'uploads', 'products', filename);
 
         // Delete file

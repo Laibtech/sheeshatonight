@@ -82,7 +82,7 @@ input {
   width: 92%;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 75px 0;
+  padding: 44px 0;
 }
 
 .shop-hero-tag {
@@ -110,11 +110,11 @@ input {
 }
 
 .shop-hero p {
-  max-width: 500px;
+  max-width: 620px;
   margin: 0 0 28px;
-  color: #625b64;
-  font-size: 14px;
-  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 16px;
+  line-height: 1.65;
 }
 
 /* Buttons */
@@ -608,6 +608,14 @@ input {
   grid-template-columns: repeat(4, 1fr);
   align-items: center;
   padding: 12px 35px;
+}
+
+.hero-trust .trust-item {
+  color: #ffffff !important;
+}
+
+.hero-trust .trust-item span {
+  color: #ffffff !important;
 }
 
 .trust-item {
