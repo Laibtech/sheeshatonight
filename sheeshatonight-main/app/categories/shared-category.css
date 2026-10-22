@@ -142,7 +142,7 @@
 .category-hero h1 {
   max-width: 900px;
   margin: 0;
-  font-family: "Inter", sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: clamp(42px, 5vw, 64px);
   line-height: 1.15;
   font-weight: 700;

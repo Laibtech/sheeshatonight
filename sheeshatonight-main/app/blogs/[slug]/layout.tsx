@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { createMetadata, generateArticleJsonLd, generateBreadcrumbsJsonLd } from '@/lib/seo';
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }> | { slug: string };
   children: React.ReactNode;
 }
 
@@ -18,7 +18,8 @@ const blogLookup: Record<string, { title: string; description: string; author: s
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const slug = params.slug;
+  const resolvedParams = await params;
+  const slug = resolvedParams.slug;
   const post = blogLookup[slug];
 
   if (post) {
@@ -48,8 +49,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default function BlogDetailLayout({ params, children }: Props) {
-  const slug = params.slug;
+export default async function BlogDetailLayout({ params, children }: Props) {
+  const resolvedParams = await params;
+  const slug = resolvedParams.slug;
   const post = blogLookup[slug] || {
     title: 'Expert Hookah Guide',
     description: 'A comprehensive guide to luxury sheesha setups and blends in Dubai.',

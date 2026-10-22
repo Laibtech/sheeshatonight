@@ -19,7 +19,10 @@ import {
   ChevronDown,
   X,
   ExternalLink,
+  LogOut,
 } from 'lucide-react';
+import { useAuthStore } from '@/lib/store';
+import { clearAllClientAuth } from '@/lib/session';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -53,7 +56,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { logout } = useAuthStore();
   const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
+
+  const handleSignOut = () => {
+    if (logout) logout();
+    clearAllClientAuth();
+    window.location.href = '/auth/login';
+  };
 
   const toggleSubMenu = (title: string) => {
     if (collapsed) return;
@@ -382,28 +392,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Footer link to public website */}
-      <div className="p-3 border-t border-[#E9E3EB] bg-[#FAF8FB]/60">
+      {/* Footer link to public website & Logout */}
+      <div className="p-3 border-t border-[#E9E3EB] bg-[#FAF8FB]/60 space-y-1.5">
         {!collapsed ? (
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between px-3 py-2 bg-white hover:bg-slate-50 text-[#716975] hover:text-[#74189B] rounded-xl border border-[#E9E3EB] text-xs font-bold transition shadow-xs"
-          >
-            <span className="truncate">View Storefront</span>
-            <ExternalLink className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
-          </a>
+          <>
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between px-3 py-2 bg-white hover:bg-slate-50 text-[#716975] hover:text-[#74189B] rounded-xl border border-[#E9E3EB] text-xs font-bold transition shadow-xs"
+            >
+              <span className="truncate">View Storefront</span>
+              <ExternalLink className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+            </a>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="w-full flex items-center justify-between px-3 py-2 bg-rose-50/80 hover:bg-rose-100 text-rose-700 rounded-xl border border-rose-200/80 text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <span className="truncate">Logout</span>
+              <LogOut className="w-3.5 h-3.5 flex-shrink-0 text-rose-600" />
+            </button>
+          </>
         ) : (
-          <a
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center p-2 text-slate-400 hover:text-[#74189B]"
-            title="View Storefront"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </a>
+          <>
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center p-2 text-slate-400 hover:text-[#74189B] rounded-xl transition"
+              title="View Storefront"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="w-full flex items-center justify-center p-2 text-rose-600 hover:bg-rose-100/80 rounded-xl transition cursor-pointer"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </>
         )}
       </div>
     </div>

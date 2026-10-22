@@ -31,6 +31,12 @@ interface RawOrder {
   status: string;
   createdAt: string;
   vendor: string;
+  customer?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+  shippingAddress?: string;
   items?: OrderItemProduct[];
   invoice?: {
     id: string;
@@ -139,9 +145,9 @@ export default function CustomerOrders() {
       status: order.status,
       paymentMethod: 'Cash on Delivery / Card on Arrival',
       customer: {
-        name: 'Sara Ahmed',
-        email: 'sara.ahmed@email.com',
-        address: 'Dubai Marina, Dubai, UAE',
+        name: order.customer?.name || 'Customer',
+        email: order.customer?.email || 'customer@sheeshatonight.com',
+        address: order.shippingAddress || 'Dubai Marina, Dubai, UAE',
         city: 'Dubai',
       },
       vendor: {
@@ -215,7 +221,8 @@ export default function CustomerOrders() {
       <div className="orders-page-header">
         <div>
           <h1>
-            <span>▣</span> My Orders
+            <Package className="w-5 h-5 text-[#74189B] shrink-0" />
+            <span>My Orders</span>
           </h1>
           <p>Track, manage and download certified tax invoices for your sheesha orders</p>
         </div>
@@ -248,7 +255,7 @@ export default function CustomerOrders() {
 
         {/* Search */}
         <div className="orders-search-box">
-          <span>⌕</span>
+          <Search size={15} style={{ color: 'var(--muted)', flexShrink: 0 }} />
           <input
             type="text"
             value={searchTerm}
@@ -267,7 +274,9 @@ export default function CustomerOrders() {
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="orders-empty-luxury">
-          <div className="orders-empty-icon">▣</div>
+          <div className="orders-empty-icon">
+            <Package size={26} />
+          </div>
           <h3>No Orders Found</h3>
           <p>
             {searchTerm || statusFilter !== 'ALL'
@@ -292,8 +301,9 @@ export default function CustomerOrders() {
               <div className="order-card-body">
                 <div className="order-info-section">
                   <div className="order-vendor-title">
-                    <Store className="w-4 h-4 text-amber-500" />
-                    <span>Fulfilled by:</span> {order.vendor || 'SheeshaTonight Certified Partner'}
+                    <Store className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Fulfilled by:</span>
+                    <strong className="font-bold text-slate-800">{order.vendor || 'Royal Sheesha Lounge'}</strong>
                   </div>
 
                   <div className="order-items-tags">

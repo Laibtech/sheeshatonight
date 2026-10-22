@@ -57,7 +57,7 @@ interface VendorStore {
 
 export default function VendorStorePage() {
   const params = useParams();
-  const vendorId = params.id as string;
+  const vendorId = (params?.id as string) || '';
 
   const [vendor, setVendor] = useState<VendorStore | null>(null);
   const [loading, setLoading] = useState(true);

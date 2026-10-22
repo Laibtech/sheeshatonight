@@ -1,6 +1,16 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key';
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret === 'default-secret-key') {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[SECURITY FATAL] JWT_SECRET is unconfigured or using an insecure default in production mode.');
+    }
+    return 'sheeshatonight_jwt_dev_insecure_fallback_secret_32_chars';
+  }
+  return secret;
+}
+
 const JWT_EXPIRY = '7d';
 
 export interface JWTPayload {
@@ -19,7 +29,7 @@ export interface JWTPayload {
  * Generate JWT token
  */
 export function generateToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, {
+  return jwt.sign(payload, getJwtSecret(), {
     expiresIn: JWT_EXPIRY,
   });
 }
@@ -29,7 +39,7 @@ export function generateToken(payload: JWTPayload): string {
  */
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const decoded = jwt.verify(token, getJwtSecret()) as JWTPayload;
     return decoded;
   } catch (error) {
     return null;

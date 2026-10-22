@@ -254,7 +254,7 @@ function SignupContent() {
               <i className="w-6 h-[1px] bg-[#f5b83d]" />
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight font-serif">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
               Create Your <span className="text-[#8a277d] dark:text-[#f5b83d]">Account</span>
             </h1>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">

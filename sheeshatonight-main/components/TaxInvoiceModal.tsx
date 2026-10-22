@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Printer, Download, X, CheckCircle2, ShieldCheck, FileCheck } from 'lucide-react';
+import { Printer, Download, X, CheckCircle2, ShieldCheck, FileCheck, Loader2 } from 'lucide-react';
+import { downloadInvoiceAsPDF, generateInvoicePDF } from '@/lib/invoicePdf';
 
 export interface TaxInvoiceData {
   id: string;
@@ -44,6 +45,8 @@ interface TaxInvoiceModalProps {
 }
 
 export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps) {
+  const [downloading, setDownloading] = useState(false);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -81,86 +84,18 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
     }, 1000);
   };
 
-  // Direct Download Invoice Slip as Standalone Document
-  const handleDownloadSlip = () => {
-    const invoiceEl = document.getElementById('printable-tax-invoice');
-    if (!invoiceEl) return;
-
-    const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tax Invoice - ${invoiceNum}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background: #f8fafc;
-      color: #1e293b;
-      padding: 30px 16px;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
+  // Direct Download Invoice as an Official High-Quality PDF Document
+  const handleDownloadPDF = async () => {
+    try {
+      setDownloading(true);
+      const safeNum = invoiceNum.replace(/[^a-zA-Z0-9-_]/g, '-');
+      await downloadInvoiceAsPDF('printable-tax-invoice', `Tax-Invoice-${safeNum}.pdf`);
+    } catch (err) {
+      console.error('Failed to generate PDF, falling back to print dialog:', err);
+      handlePrint();
+    } finally {
+      setDownloading(false);
     }
-    .invoice-wrapper {
-      max-width: 820px;
-      margin: 0 auto;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 40px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    }
-    .print-btn-bar {
-      max-width: 820px;
-      margin: 0 auto 20px auto;
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-    }
-    .btn-action {
-      background: #74189B;
-      color: #ffffff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .btn-action:hover { background: #571275; }
-    @media print {
-      body { background: #ffffff; padding: 0; }
-      .print-btn-bar { display: none; }
-      .invoice-wrapper { border: none; box-shadow: none; padding: 0; max-width: 100%; }
-    }
-  </style>
-</head>
-<body>
-  <div class="print-btn-bar">
-    <button class="btn-action" onclick="window.print()">Print / Save as PDF</button>
-  </div>
-  <div class="invoice-wrapper">
-    ${invoiceEl.innerHTML}
-  </div>
-</body>
-</html>`;
-
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Tax-Invoice-${invoiceNum}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -175,24 +110,29 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
         <div className="print:hidden sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 bg-slate-900 text-white shadow-md">
           <div className="flex items-center gap-2 text-xs font-bold">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="truncate">Official UAE Tax Invoice Preview</span>
+            <span className="truncate">Official UAE Tax Invoice (PDF)</span>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               type="button"
-              onClick={handleDownloadSlip}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#F1A51D] to-[#D4AF37] hover:brightness-110 text-slate-950 text-xs font-black shadow-sm transition active:scale-95"
-              title="Download standalone invoice slip file"
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#F1A51D] to-[#D4AF37] hover:brightness-110 text-slate-950 text-xs font-black shadow-sm transition active:scale-95 disabled:opacity-60 cursor-pointer"
+              title="Download official PDF Tax Invoice"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download Slip</span>
+              {downloading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span>{downloading ? 'Downloading...' : 'Download PDF'}</span>
             </button>
 
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition border border-white/10 active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition border border-white/10 active:scale-95 cursor-pointer"
               title="Print or Save as PDF"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -202,7 +142,7 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition ml-1"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition ml-1 cursor-pointer"
               title="Close invoice"
             >
               <X className="w-5 h-5" />
@@ -388,7 +328,7 @@ export function TaxInvoiceModal({ isOpen, onClose, data }: TaxInvoiceModalProps)
 
             <div className="text-center sm:text-right border border-dashed border-slate-300 rounded-xl px-4 py-2 bg-slate-50">
               <p className="text-[10px] uppercase font-bold text-slate-500">Authorized Signatory</p>
-              <p className="font-serif italic font-bold text-slate-800 text-sm mt-0.5">
+              <p className="italic font-bold text-slate-800 text-sm mt-0.5">
                 SheeshaTonight Portal LLC
               </p>
             </div>

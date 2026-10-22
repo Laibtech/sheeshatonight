@@ -207,3 +207,73 @@ export async function sendOrderConfirmationEmail(params: {
     text: `Order Confirmed: #${params.orderNumber}. Total: ${currency} ${params.totalAmount} from ${params.vendorName}. View details on SheeshaTonight.`,
   });
 }
+
+/**
+ * Administrative alert for new marketplace order
+ */
+export async function sendAdminNewOrderEmail(params: {
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  totalAmount: number | string;
+  currency?: string;
+  vendorName: string;
+  itemsCount: number;
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@sheeshatonight.com';
+  const currency = params.currency || 'AED';
+
+  const html = `
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #f0e6f0;">
+      <div style="background: linear-gradient(135deg, #211D24 0%, #151317 100%); padding: 28px 24px; text-align: center;">
+        <h1 style="color: #D4AF37; margin: 0; font-size: 22px; letter-spacing: 1px;">SHEESHATONIGHT ADMIN</h1>
+        <p style="color: #ffffff; margin: 6px 0 0; font-size: 13px; opacity: 0.85;">New Marketplace Order Notification</p>
+      </div>
+      <div style="padding: 28px 24px; color: #29252B;">
+        <h2 style="color: #211D24; margin-top: 0; font-size: 18px;">Order Notification: #${params.orderNumber}</h2>
+        
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; margin: 20px 0; border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr>
+              <td style="padding: 6px 0; color: #64748B;">Order Number:</td>
+              <td style="padding: 6px 0; font-weight: bold; color: #822576;">#${params.orderNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748B;">Customer:</td>
+              <td style="padding: 6px 0; font-weight: 600;">${params.customerName} (${params.customerEmail})</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748B;">Fulfilling Vendor:</td>
+              <td style="padding: 6px 0; font-weight: 600;">${params.vendorName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748B;">Items Count:</td>
+              <td style="padding: 6px 0;">${params.itemsCount} item(s)</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748B;">Total Amount:</td>
+              <td style="padding: 6px 0; font-weight: bold; color: #16A34A; font-size: 16px;">${currency} ${params.totalAmount}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin: 24px 0 8px;">
+          <a href="https://sheeshatonight.com/admin/orders" style="background: #822576; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px;">
+            View in Admin Dashboard
+          </a>
+        </div>
+      </div>
+      <div style="background: #F8FAFC; padding: 14px 24px; text-align: center; font-size: 12px; color: #94A3B8; border-top: 1px solid #E2E8F0;">
+        Internal Administration Alert &bull; SheeshaTonight Operations
+      </div>
+    </div>
+  `;
+
+  return sendEmail({
+    to: adminEmail,
+    subject: `[Admin Alert] New Order #${params.orderNumber} placed by ${params.customerName}`,
+    html,
+    text: `New Order #${params.orderNumber} placed by ${params.customerName} (${params.customerEmail}) for ${params.vendorName}. Total: ${currency} ${params.totalAmount}. Manage at sheeshatonight.com/admin/orders`,
+  });
+}
+

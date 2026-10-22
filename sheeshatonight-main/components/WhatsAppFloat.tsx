@@ -72,7 +72,7 @@ export default function WhatsAppFloat() {
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="whatsapp-float !relative !bottom-auto !right-auto flex items-center justify-center w-[60px] h-[60px] rounded-full bg-gradient-to-tr from-[#25d366] to-[#128c7e] text-white shadow-[0_8px_25px_rgba(37,211,102,0.4)] hover:shadow-[0_10px_35px_rgba(37,211,102,0.6)] transition-all"
+        className="whatsapp-float !relative !bottom-auto !right-auto flex items-center justify-center w-[56px] h-[56px] sm:w-[60px] sm:h-[60px] rounded-full bg-gradient-to-tr from-[#25d366] to-[#128c7e] text-white shadow-[0_8px_25px_rgba(37,211,102,0.4)] hover:shadow-[0_10px_35px_rgba(37,211,102,0.6)] transition-all"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.6, duration: 0.3 }}
@@ -81,7 +81,7 @@ export default function WhatsAppFloat() {
         aria-label="Chat with SheeshaTonight Concierge on WhatsApp"
         title="Chat with us on WhatsApp"
       >
-        <MessageCircle className="w-7 h-7" />
+        <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
       </motion.a>
     </div>
   );

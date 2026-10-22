@@ -216,6 +216,31 @@
   font-weight: 700;
 }
 
+.sidebar-nav .logout-nav-btn {
+  height: 38px;
+  width: 100%;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #e11d48;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all .2s;
+  cursor: pointer;
+  text-align: left;
+  margin-top: 4px;
+}
+
+.sidebar-nav .logout-nav-btn:hover {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
 .icon {
   width: 20px;
   text-align: center;
@@ -742,6 +767,46 @@
   font-size: 18px;
   font-weight: 400;
   color: #bbb;
+}
+
+.profile-links button.profile-logout-btn {
+  width: 100%;
+  height: 39px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e11d48;
+  background: transparent;
+  border: none;
+  border-top: 1px dashed #fecdd3;
+  margin-top: 6px;
+  padding: 0 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+  border-radius: 6px;
+}
+
+.profile-links button.profile-logout-btn:hover {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.profile-links button.profile-logout-btn span {
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e11d48;
+}
+
+.profile-links button.profile-logout-btn b {
+  margin-left: auto;
+  color: #fca5a5;
+  display: inline-flex;
+  align-items: center;
 }
 
 /* SUPPORT */
@@ -1410,3 +1475,355 @@
 .browse-sheesha-cta:hover {
   background: var(--purple-dark);
 }
+
+/* =======================================================
+   MOBILE HAMBURGER & SLIDE-OVER DRAWER FOR CUSTOMER PORTAL
+   ======================================================= */
+
+.customer-mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: #f7f5f9;
+  color: #251541;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+
+.customer-mobile-menu-btn:hover {
+  background: var(--purple-soft);
+  color: var(--purple);
+  border-color: var(--purple-light);
+}
+
+/* Mobile Drawer Backdrop */
+.customer-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 10, 25, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 998;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Mobile Slide-over Drawer */
+.customer-mobile-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 290px;
+  max-width: 85vw;
+  background: #ffffff;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 8px 0 32px rgba(37, 21, 65, 0.2);
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.customer-mobile-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: #faf8fb;
+}
+
+.drawer-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555268;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: .2s;
+}
+
+.drawer-close-btn:hover {
+  background: #fdf2f4;
+  color: #e11d48;
+  border-color: #fecdd3;
+}
+
+.drawer-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #fbf5fb, #ffffff);
+}
+
+.drawer-avatar img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--purple-light);
+}
+
+.drawer-user-info h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #251541;
+  margin: 0 0 2px;
+}
+
+.drawer-user-info p {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 0 4px;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-role-badge {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: #f0ddf1;
+  color: var(--purple);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.drawer-nav {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.drawer-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #45425b;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .2s;
+}
+
+.drawer-nav a:hover {
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
+.drawer-nav a.active {
+  background: #f0ddf1;
+  color: var(--purple);
+  font-weight: 700;
+}
+
+.drawer-promo {
+  margin: 12px 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #faf8fb;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.drawer-promo .promo-icon {
+  margin-bottom: 4px;
+}
+
+.drawer-promo h3 {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #251541;
+  margin: 0 0 2px;
+}
+
+.drawer-promo p {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.drawer-promo-link {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--purple);
+  text-decoration: none;
+}
+
+.drawer-footer {
+  padding: 14px 16px 24px;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.drawer-logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.drawer-logout-btn:hover {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+/* =======================================================
+   RESPONSIVE ORDERS & HEADER REFINEMENTS (MOBILE SCREENS)
+   ======================================================= */
+
+@media (max-width: 800px) {
+  .customer-mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .orders-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 8px 10px;
+  }
+
+  .orders-tabs {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 4px;
+    display: flex;
+    gap: 4px;
+  }
+
+  .orders-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .orders-tab-btn {
+    flex: 1 0 auto;
+    text-align: center;
+    padding: 7px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .orders-search-box {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-header {
+    height: 60px;
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .user-name-text,
+  .user-name-chevron {
+    display: none !important;
+  }
+
+  .header-actions {
+    gap: 10px;
+  }
+
+  .orders-page-container {
+    padding: 14px 12px 60px;
+  }
+
+  .orders-page-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .orders-page-header h1 {
+    font-size: 20px;
+  }
+
+  .luxury-order-card {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .order-card-body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+  }
+
+  .order-pricing-section {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 8px;
+    border-top: 1px dashed #f0edf2;
+  }
+
+  .order-card-footer {
+    padding-top: 10px;
+  }
+
+  .order-action-btns {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+  }
+
+  .btn-details,
+  .btn-tax-invoice,
+  .btn-reorder {
+    flex: 1;
+    padding: 7px 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    justify-content: center;
+    text-align: center;
+  }
+}
+

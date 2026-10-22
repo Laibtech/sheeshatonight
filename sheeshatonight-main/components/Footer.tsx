@@ -177,7 +177,7 @@ export default function Footer() {
                 Vendor Support
               </Link>
               <Link href="/contact" className="block hover:text-white">
-                Contact
+                Contact Us
               </Link>
               <Link href="/faqs" className="block hover:text-white">
                 FAQ

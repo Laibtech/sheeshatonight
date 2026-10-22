@@ -18,7 +18,7 @@
   min-height: 100vh;
   background: var(--how-bg);
   color: var(--how-text);
-  font-family: "Poppins", "Inter", Arial, sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .how-page a {

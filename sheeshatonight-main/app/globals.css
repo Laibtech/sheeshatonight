@@ -1,13 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&display=swap');
 
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
 :root {
   --primary: #74189B;
+  --purple: #74189B;
+  --purple-dark: #571275;
   --deep-purple: #571275;
   --gold: #F1A51D;
-  --font-family: 'Montserrat', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --orange: #FF7A00;
+  --muted: #64748b;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 html {
@@ -40,6 +46,10 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
 }
 
 button,
@@ -185,7 +195,7 @@ background: #fff;
 .premium-hero-title {
   margin: 0;
   max-width: 680px;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: clamp(2.6rem, 4vw, 4.1rem);
   line-height: 1.04;
   letter-spacing: -0.05em;
@@ -312,7 +322,7 @@ width: fit-content;
 }
 
 .hero h1 {
-font-family: "Poppins", sans-serif;
+font-family: 'Montserrat', sans-serif;
 font-size: clamp(42px, 5.5vw, 72px);
 line-height: 1.1;
 font-weight: 800;
@@ -582,7 +592,7 @@ letter-spacing: 2.5px;
 }
 
 .section-heading h2 {
-font-family: "Poppins", sans-serif;
+font-family: 'Montserrat', sans-serif;
 font-size: 36px;
 line-height: 1.2;
 margin-top: 10px;
@@ -706,8 +716,8 @@ height: 100%;
 object-fit: cover;
 }
 
-.rating,
-.distance {
+.vendor-card .rating,
+.vendor-card .distance {
 position: absolute;
 top: 11px;
 padding: 7px 11px;
@@ -718,16 +728,13 @@ background: rgba(20, 20, 25, 0.78);
 color: white;
 }
 
-.rating {
+.vendor-card .rating {
 left: 11px;
-}
-
-.distance {
-right: 11px;
-}
-
-.rating {
 color: var(--gold);
+}
+
+.vendor-card .distance {
+right: 11px;
 }
 
 .vendor-content {
@@ -1155,7 +1162,7 @@ box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .vendor-cta h2 {
-font-family: "Poppins";
+font-family: 'Montserrat', sans-serif;
 font-size: 32px;
 margin: 8px 0 12px;
 color: #2d1b3d;
@@ -1584,7 +1591,7 @@ margin-right: 35px;
 position: relative;
 color: #25232b;
 text-decoration: none;
-font-family: "Inter", sans-serif;
+font-family: 'Montserrat', sans-serif;
 font-size: 13px;
 font-weight: 600;
 transition: color 0.25s ease, transform 0.25s ease;
@@ -1974,7 +1981,7 @@ body:has(.vendor-layout) .vertical-marquee {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   white-space: nowrap;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 3px;

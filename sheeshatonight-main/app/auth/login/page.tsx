@@ -18,31 +18,28 @@ function LoginContent() {
   const [error, setError] = useState('');
   const [requestedRole, setRequestedRole] = useState<string | null>(null);
 
+  const [quickLoadingRole, setQuickLoadingRole] = useState<string | null>(null);
+
   useEffect(() => {
     const role = searchParams?.get('role');
     setRequestedRole(role);
   }, [searchParams]);
 
-  const handleQuickLogin = (quickEmail: string, quickPass: string) => {
-    setEmail(quickEmail);
-    setPassword(quickPass);
-    setError('');
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performLogin = async (loginEmail: string, loginPass: string, targetRole?: string) => {
     setError('');
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const trimmedPassword = password.trim();
+    const normalizedEmail = loginEmail.trim().toLowerCase();
+    const trimmedPassword = loginPass.trim();
 
     if (!normalizedEmail) {
       setError('Please enter your email address.');
+      setQuickLoadingRole(null);
       return;
     }
 
     if (!trimmedPassword) {
       setError('Please enter your password.');
+      setQuickLoadingRole(null);
       return;
     }
 
@@ -67,6 +64,7 @@ function LoginContent() {
           setError(data.error || 'Unable to log in. Please check your details and try again.');
         }
         setLoading(false);
+        setQuickLoadingRole(null);
         return;
       }
 
@@ -87,16 +85,16 @@ function LoginContent() {
 
         if (typeof document !== 'undefined') {
           const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
-          document.cookie = `auth_token=${encodeURIComponent(token)}; path=/; expires=${expires};`;
-          document.cookie = `user_role=${encodeURIComponent(user.role)}; path=/; expires=${expires};`;
-          document.cookie = `user_email=${encodeURIComponent(user.email)}; path=/; expires=${expires};`;
-          document.cookie = `user_name=${encodeURIComponent(user.name || 'User')}; path=/; expires=${expires};`;
+          document.cookie = `auth_token=${encodeURIComponent(token)}; path=/; expires=${expires}; SameSite=Lax`;
+          document.cookie = `user_role=${encodeURIComponent(user.role)}; path=/; expires=${expires}; SameSite=Lax`;
+          document.cookie = `user_email=${encodeURIComponent(user.email)}; path=/; expires=${expires}; SameSite=Lax`;
+          document.cookie = `user_name=${encodeURIComponent(user.name || 'User')}; path=/; expires=${expires}; SameSite=Lax`;
           if (user.role === 'VENDOR' && activeVendorName) {
-            document.cookie = `vendor_name=${encodeURIComponent(activeVendorName)}; path=/; expires=${expires};`;
+            document.cookie = `vendor_name=${encodeURIComponent(activeVendorName)}; path=/; expires=${expires}; SameSite=Lax`;
           } else {
-            document.cookie = `vendor_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;`;
+            document.cookie = `vendor_name=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
           }
-          document.cookie = `user_logged_in=true; path=/; expires=${expires};`;
+          document.cookie = `user_logged_in=true; path=/; expires=${expires}; SameSite=Lax`;
         }
       }
 
@@ -121,17 +119,41 @@ function LoginContent() {
       };
 
       const redirectParam = searchParams?.get('redirect');
-      const redirectPath = redirectParam || roleRoutes[user.role] || '/dashboard';
+      let targetPath = roleRoutes[user.role] || '/dashboard';
+
+      // Smart role-based redirect validation: avoid trapping admin in customer routes
+      if (redirectParam) {
+        if (user.role === 'ADMIN' && redirectParam.startsWith('/admin')) {
+          targetPath = redirectParam;
+        } else if (user.role === 'VENDOR' && redirectParam.startsWith('/vendor')) {
+          targetPath = redirectParam;
+        } else if (user.role === 'CUSTOMER' && (redirectParam.startsWith('/dashboard') || redirectParam.startsWith('/cart') || redirectParam.startsWith('/checkout') || redirectParam.startsWith('/orders'))) {
+          targetPath = redirectParam;
+        }
+      }
       
       // Perform full browser navigation to ensure all server layouts and auth cookies re-evaluate cleanly
       setTimeout(() => {
-        window.location.href = redirectPath;
+        window.location.href = targetPath;
       }, 150);
     } catch (err) {
       console.error('Login error:', err);
       setError('Unable to connect. Please check your backend server / internet connection.');
       setLoading(false);
+      setQuickLoadingRole(null);
     }
+  };
+
+  const handleQuickLogin = async (quickEmail: string, quickPass: string, roleName: string) => {
+    setEmail(quickEmail);
+    setPassword(quickPass);
+    setQuickLoadingRole(roleName);
+    await performLogin(quickEmail, quickPass, roleName);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performLogin(email, password);
   };
 
   return (
@@ -179,7 +201,7 @@ function LoginContent() {
               <i className="w-6 h-[1px] bg-[#f5b83d]" />
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight font-serif">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
               Sign In To <span className="text-[#8a277d] dark:text-[#f5b83d]">SheeshaTonight</span>
             </h1>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -210,30 +232,45 @@ function LoginContent() {
               <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
-                  onClick={() => handleQuickLogin('admin@sheeshatonight.com', 'admin123')}
-                  className="py-1.5 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs"
-                  title="Super Admin: admin@sheeshatonight.com / admin123"
+                  disabled={loading}
+                  onClick={() => handleQuickLogin('admin@sheeshatonight.com', 'admin123', 'ADMIN')}
+                  className="py-2 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs disabled:opacity-60 cursor-pointer"
+                  title="Super Admin: Click for instant 1-click login"
                 >
-                  <Shield className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
-                  <span>Admin</span>
+                  {quickLoadingRole === 'ADMIN' ? (
+                    <Loader2 className="w-3.5 h-3.5 flex-shrink-0 animate-spin text-[#8a277d] dark:text-[#f5b83d]" />
+                  ) : (
+                    <Shield className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
+                  )}
+                  <span>{quickLoadingRole === 'ADMIN' ? 'Signing in...' : 'Admin'}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleQuickLogin('vendor@sheeshatonight.com', 'vendor123')}
-                  className="py-1.5 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs"
-                  title="Vendor: vendor@sheeshatonight.com / vendor123"
+                  disabled={loading}
+                  onClick={() => handleQuickLogin('vendor@sheeshatonight.com', 'vendor123', 'VENDOR')}
+                  className="py-2 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs disabled:opacity-60 cursor-pointer"
+                  title="Vendor: Click for instant 1-click login"
                 >
-                  <Store className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
-                  <span>Vendor</span>
+                  {quickLoadingRole === 'VENDOR' ? (
+                    <Loader2 className="w-3.5 h-3.5 flex-shrink-0 animate-spin text-[#8a277d] dark:text-[#f5b83d]" />
+                  ) : (
+                    <Store className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
+                  )}
+                  <span>{quickLoadingRole === 'VENDOR' ? 'Signing in...' : 'Vendor'}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleQuickLogin('customer@sheeshatonight.com', 'customer123')}
-                  className="py-1.5 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs"
-                  title="Customer: customer@sheeshatonight.com / customer123"
+                  disabled={loading}
+                  onClick={() => handleQuickLogin('customer@sheeshatonight.com', 'customer123', 'CUSTOMER')}
+                  className="py-2 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs disabled:opacity-60 cursor-pointer"
+                  title="Customer: Click for instant 1-click login"
                 >
-                  <User className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
-                  <span>Customer</span>
+                  {quickLoadingRole === 'CUSTOMER' ? (
+                    <Loader2 className="w-3.5 h-3.5 flex-shrink-0 animate-spin text-[#8a277d] dark:text-[#f5b83d]" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
+                  )}
+                  <span>{quickLoadingRole === 'CUSTOMER' ? 'Signing in...' : 'Customer'}</span>
                 </button>
               </div>
             </div>

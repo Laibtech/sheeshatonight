@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { Mail, Phone, Check, ArrowRight } from "lucide-react";
+import { Mail, Phone, Check, ArrowRight, MapPin } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -119,7 +119,9 @@ export default function ContactPage() {
                 </div>
 
                 <div className="info-card">
-                  <div className="info-icon">⌖</div>
+                  <div className="info-icon">
+                    <MapPin className="w-5 h-5" />
+                  </div>
 
                   <div>
                     <span>Service Area</span>
@@ -334,7 +336,7 @@ export default function ContactPage() {
 
         .contact-hero {
           position: relative;
-          min-height: 540px;
+          min-height: 560px;
           display: flex;
           align-items: center;
           overflow: hidden;
@@ -342,18 +344,37 @@ export default function ContactPage() {
           background:
             linear-gradient(
               90deg,
-              rgba(255, 255, 255, 0.98) 0%,
-              rgba(255, 255, 255, 0.94) 42%,
-              rgba(255, 255, 255, 0.2) 78%,
-              rgba(255, 255, 255, 0) 100%
+              rgba(13, 7, 18, 0.96) 0%,
+              rgba(20, 9, 28, 0.92) 38%,
+              rgba(26, 11, 35, 0.72) 65%,
+              rgba(13, 7, 18, 0.38) 100%
             ),
             url("/images/contact-hero.jpg") center / cover no-repeat;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .contact-hero .hero-overlay {
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(
+              circle at 80% 30%,
+              rgba(245, 184, 61, 0.14),
+              transparent 45%
+            ),
+            radial-gradient(
+              circle at 20% 70%,
+              rgba(138, 39, 125, 0.22),
+              transparent 50%
+            );
+          pointer-events: none;
+          z-index: 1;
         }
 
         .hero-content {
           position: relative;
           z-index: 2;
-          padding: 56px 0;
+          padding: 64px 0;
         }
 
         .eyebrow {
@@ -366,33 +387,52 @@ export default function ContactPage() {
         }
 
         .contact-hero .eyebrow {
-          color: #74189b;
+          display: inline-flex;
+          align-items: center;
+          padding: 7px 18px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(245, 184, 61, 0.35);
+          color: #f5b83d;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.2em;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+          margin-bottom: 22px;
         }
 
         .contact-hero h1 {
           max-width: 650px;
           margin: 0;
-          color: #251f27;
-          font-size: clamp(48px, 6vw, 78px);
-          line-height: 0.98;
-          letter-spacing: -0.055em;
+          color: #ffffff;
+          font-size: clamp(48px, 6vw, 76px);
+          line-height: 1.02;
+          letter-spacing: -0.045em;
+          font-weight: 800;
+          text-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
         }
 
         .contact-hero h1 span {
-          color: #74189b;
+          background: linear-gradient(135deg, #f28cf0 0%, #db4fc9 45%, #f5b83d 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          display: inline-block;
         }
 
         .contact-hero p {
           max-width: 560px;
-          margin: 26px 0 32px;
-          color: #665f68;
+          margin: 24px 0 34px;
+          color: rgba(255, 255, 255, 0.85);
           font-size: 18px;
           line-height: 1.7;
+          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
 
         .hero-links {
           display: flex;
-          gap: 12px;
+          gap: 14px;
           flex-wrap: wrap;
         }
 
@@ -401,24 +441,39 @@ export default function ContactPage() {
           align-items: center;
           justify-content: center;
           min-height: 52px;
-          padding: 0 25px;
-          border-radius: 10px;
-          background: #74189b;
-          color: white;
+          padding: 0 28px;
+          border-radius: 999px;
+          background: linear-gradient(135deg, #8a277d 0%, #631859 100%);
+          color: #ffffff;
           font-size: 14px;
           font-weight: 700;
-          transition: 0.2s ease;
+          letter-spacing: 0.02em;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 8px 24px rgba(138, 39, 125, 0.45);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .hero-links a:hover {
-          background: #571275;
-          transform: translateY(-1px);
+          background: linear-gradient(135deg, #a13292 0%, #751d69 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 12px 30px rgba(138, 39, 125, 0.65);
         }
 
         .hero-links .outline-link {
-          background: white;
-          color: #74189b;
-          border: 1px solid #dfd4e4;
+          background: rgba(255, 255, 255, 0.08);
+          color: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-links .outline-link:hover {
+          background: rgba(255, 255, 255, 0.18);
+          border-color: rgba(255, 255, 255, 0.55);
+          color: #ffffff;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
         }
 
         /* CONTACT */
@@ -802,9 +857,10 @@ export default function ContactPage() {
             min-height: 500px;
             background:
               linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0.97),
-                rgba(255, 255, 255, 0.78)
+                180deg,
+                rgba(13, 7, 18, 0.94) 0%,
+                rgba(20, 9, 28, 0.9) 65%,
+                rgba(13, 7, 18, 0.8) 100%
               ),
               url("/images/contact-hero.jpg") center / cover no-repeat;
           }

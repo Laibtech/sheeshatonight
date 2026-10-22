@@ -26,9 +26,17 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
       orderBy: { createdAt: 'desc' },
     });
 
+    // Filter out deleted or missing products
+    const validItems = items.filter(
+      (item) => item.product && !(item.product as any).deletedAt
+    );
+
     return NextResponse.json({
       success: true,
-      data: { items },
+      data: {
+        items: validItems,
+        count: validItems.length,
+      },
     });
 
   } catch (error: any) {
@@ -41,7 +49,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
 });
 
 /**
- * POST /api/wishlist - Add item to wishlist
+ * POST /api/wishlist - Add item(s) to wishlist (supports single productId or batch productIds)
  */
 export const POST = withAuth(async (req: AuthenticatedRequest) => {
   try {
@@ -55,7 +63,36 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     }
 
     const body = await req.json();
-    const { productId } = body;
+    const { productId, productIds } = body;
+
+    // Handle batch sync (e.g. merging guest wishlist on login)
+    if (Array.isArray(productIds) && productIds.length > 0) {
+      const validProductIds: string[] = [];
+      const products = await prisma.product.findMany({
+        where: { id: { in: productIds.map(String) } },
+        select: { id: true },
+      });
+      const existingIds = new Set(products.map((p) => p.id));
+
+      for (const id of productIds) {
+        const strId = String(id);
+        if (existingIds.has(strId)) {
+          validProductIds.push(strId);
+          await prisma.wishlist.upsert({
+            where: { userId_productId: { userId, productId: strId } },
+            create: { userId, productId: strId },
+            update: {},
+          });
+        }
+      }
+
+      const totalItems = await prisma.wishlist.count({ where: { userId } });
+      return NextResponse.json({
+        success: true,
+        message: `${validProductIds.length} items synced to wishlist`,
+        data: { syncedCount: validProductIds.length, totalCount: totalItems },
+      });
+    }
 
     if (!productId) {
       return NextResponse.json(
@@ -64,9 +101,11 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
+    const strProductId = String(productId);
+
     // Verify product exists
     const product = await prisma.product.findUnique({
-      where: { id: productId },
+      where: { id: strProductId },
     });
 
     if (!product) {
@@ -77,15 +116,22 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     }
 
     const wishlistItem = await prisma.wishlist.upsert({
-      where: { userId_productId: { userId, productId } },
-      create: { userId, productId },
+      where: { userId_productId: { userId, productId: strProductId } },
+      create: { userId, productId: strProductId },
       update: {},
+      include: {
+        product: {
+          include: { vendor: { select: { id: true, name: true, slug: true } } },
+        },
+      },
     });
+
+    const count = await prisma.wishlist.count({ where: { userId } });
 
     return NextResponse.json({
       success: true,
       message: 'Product added to wishlist',
-      data: wishlistItem,
+      data: { item: wishlistItem, count },
     });
 
   } catch (error: any) {
@@ -98,7 +144,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
 });
 
 /**
- * DELETE /api/wishlist - Remove item from wishlist
+ * DELETE /api/wishlist - Remove item from wishlist (or clear all if productId is 'all' or empty)
  */
 export const DELETE = withAuth(async (req: AuthenticatedRequest) => {
   try {
@@ -113,21 +159,30 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest) => {
 
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get('productId');
+    const isAll = searchParams.get('all') === 'true' || productId === 'all' || !productId;
 
-    if (!productId) {
-      return NextResponse.json(
-        { success: false, error: 'Product ID is required' },
-        { status: 400 }
-      );
+    if (isAll) {
+      await prisma.wishlist.deleteMany({
+        where: { userId },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Wishlist cleared successfully',
+        data: { count: 0 },
+      });
     }
 
     await prisma.wishlist.deleteMany({
-      where: { userId, productId },
+      where: { userId, productId: String(productId) },
     });
+
+    const count = await prisma.wishlist.count({ where: { userId } });
 
     return NextResponse.json({
       success: true,
       message: 'Product removed from wishlist',
+      data: { count },
     });
 
   } catch (error: any) {

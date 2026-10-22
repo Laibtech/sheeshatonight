@@ -3,7 +3,7 @@ set "PATH=C:\Program Files\nodejs;%PATH%"
 title SheeshaTonight - Full Stack & Mobile Launcher
 color 0B
 echo =========================================================
-echo    👑 SHEESHATONIGHT - LUXURY PLATFORM LAUNCHER
+echo    SHEESHATONIGHT - LUXURY PLATFORM LAUNCHER
 echo =========================================================
 echo.
 

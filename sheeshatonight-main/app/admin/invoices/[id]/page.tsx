@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Printer, ShieldCheck, CheckCircle2, Loader2, FileText } from 'lucide-react';
+import { ArrowLeft, Printer, ShieldCheck, CheckCircle2, Loader2, FileText, Download } from 'lucide-react';
+import { downloadInvoiceAsPDF, generateInvoicePDF } from '@/lib/invoicePdf';
 
 interface InvoiceDetails {
   id: string;
@@ -48,17 +50,22 @@ interface InvoiceDetails {
 export default function AdminInvoiceDetailPage({
   params,
 }: {
-  params: { id: string };
+  params?: Promise<{ id: string }> | { id: string };
 }) {
+  const routeParams = useParams();
+  const unwrapped = params ? ('then' in params ? React.use(params) : params) : null;
+  const invoiceId = (routeParams?.id as string) || unwrapped?.id || '';
+
   const [invoice, setInvoice] = useState<InvoiceDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchInvoice = async () => {
+      if (!invoiceId) return;
       try {
         setLoading(true);
         const token = localStorage.getItem('auth_token');
-        const res = await fetch(`/api/admin/invoices/${params.id}`, {
+        const res = await fetch(`/api/admin/invoices/${invoiceId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
@@ -74,7 +81,7 @@ export default function AdminInvoiceDetailPage({
     };
 
     fetchInvoice();
-  }, [params.id]);
+  }, [invoiceId]);
 
   const formatAED = (amount: number = 0) => {
     return new Intl.NumberFormat('en-AE', {
@@ -85,8 +92,23 @@ export default function AdminInvoiceDetailPage({
     }).format(amount);
   };
 
+  const [downloading, setDownloading] = useState(false);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!invoice) return;
+    try {
+      setDownloading(true);
+      await downloadInvoiceAsPDF('printable-tax-invoice', `Tax-Invoice-${invoice.invoiceNumber}.pdf`);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      handlePrint();
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (loading) {
@@ -138,17 +160,32 @@ export default function AdminInvoiceDetailPage({
             View Order #{invoice.orderNumber}
           </Link>
           <button
+            type="button"
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F1A51D] to-[#D4AF37] hover:brightness-110 text-slate-950 text-xs font-black rounded-xl shadow-xs transition active:scale-95 disabled:opacity-60 cursor-pointer"
+            title="Download Official PDF Invoice"
+          >
+            {downloading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            <span>{downloading ? 'Downloading...' : 'Download PDF'}</span>
+          </button>
+          <button
+            type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-2 px-5 py-2 bg-[#74189B] hover:bg-[#571275] text-white text-xs font-bold rounded-xl shadow-xs transition"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-[#74189B] hover:bg-[#571275] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Print Tax Invoice</span>
+            <span>Print</span>
           </button>
         </div>
       </div>
 
       {/* Official Tax Invoice Paper */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 sm:p-14 text-slate-800">
+      <div id="printable-tax-invoice" className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 sm:p-14 text-slate-800">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-8 border-b-2 border-slate-100">
           <div>
@@ -327,7 +364,7 @@ export default function AdminInvoiceDetailPage({
 
           <div className="text-center sm:text-right border border-dashed border-slate-300 rounded-2xl px-5 py-3 bg-slate-50">
             <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Authorized Stamp</p>
-            <p className="font-serif italic font-black text-slate-900 text-sm mt-0.5">
+            <p className="italic font-black text-slate-900 text-sm mt-0.5">
               SheeshaTonight Portal LLC
             </p>
           </div>

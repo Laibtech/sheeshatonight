@@ -11,4 +11,5 @@ build/
 .vercel
 backups/
 *.bak
-
+*.exe
+*.tsbuildinfo

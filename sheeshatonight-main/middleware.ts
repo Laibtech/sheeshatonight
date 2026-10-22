@@ -31,14 +31,28 @@ export function middleware(request: NextRequest) {
 
   // Strict role-based isolation: Admin area requires ADMIN or SUPER_ADMIN role
   if (isAdminDashboard) {
-    if (userRole && userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+    if (!userRole || (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN')) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
 
-  // Note: For /vendor (protected vendor dashboard), requests from authenticated customers
-  // proceed to ProtectedRoute, which presents a clear Access Denied & Vendor Application CTA
-  // rather than an unexpected silent redirect loop.
+  // Strict role-based isolation: Vendor area requires VENDOR, ADMIN or SUPER_ADMIN role
+  if (isVendorDashboard) {
+    if (!userRole || (userRole !== 'VENDOR' && userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
+  // Strict role-based isolation: Customer area is for CUSTOMER only
+  if (isCustomerDashboard) {
+    if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
+    if (userRole === 'VENDOR') {
+      return NextResponse.redirect(new URL('/vendor', request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

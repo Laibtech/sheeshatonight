@@ -3,7 +3,7 @@
   background-color: #ffffff;
   color: #0f172a;
   min-height: 100vh;
-  font-family: var(--font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-family: 'Montserrat', sans-serif;
 }
 
 .product-container {

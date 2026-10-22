@@ -594,9 +594,7 @@ export default function VendorsPage() {
           .vendors-page {
             min-height: 100vh;
             background: #ffffff;
-            font-family:
-              Inter, ui-sans-serif, system-ui, -apple-system,
-              BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: 'Montserrat', sans-serif;
           }
 
           .container {

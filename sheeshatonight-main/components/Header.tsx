@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuthStore } from "@/lib/store";
 import {
   Search,
@@ -19,6 +20,7 @@ import {
 export default function Header() {
   const pathname = usePathname() || "";
   const { itemCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const { isLoggedIn, userRole } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -292,14 +294,14 @@ export default function Header() {
                 href="/about"
                 className={getLinkClass(isAboutActive)}
               >
-                ABOUT
+                ABOUT US
               </Link>
 
               <Link
                 href="/contact"
                 className={getLinkClass(isContactActive)}
               >
-                CONTACT
+                CONTACT US
               </Link>
             </nav>
 
@@ -314,10 +316,15 @@ export default function Header() {
 
               <Link
                 href="/wishlist"
-                className="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B] transition-colors"
+                className="relative hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#F8F2FA] text-gray-700 hover:text-[#74189B] transition-colors"
                 title="My Wishlist"
               >
                 <Heart size={19} strokeWidth={1.8} />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-[17px] h-[17px] rounded-full bg-[#74189B] text-white text-[9px] flex items-center justify-center font-bold shadow-2xs">
+                    {wishlistCount}
+                  </span>
+                )}
               </Link>
 
               <Link
@@ -368,8 +375,8 @@ export default function Header() {
                 { label: "RENTALS", href: "/rentals", active: isRentalsActive },
                 { label: "EXPERIENCES", href: "/experiences", active: isExperiencesActive },
                 { label: "VENDORS", href: "/vendors", active: isVendorsActive },
-                { label: "ABOUT", href: "/about", active: isAboutActive },
-                { label: "CONTACT", href: "/contact", active: isContactActive },
+                { label: "ABOUT US", href: "/about", active: isAboutActive },
+                { label: "CONTACT US", href: "/contact", active: isContactActive },
               ].map(({ label, href, active }) => (
                 <Link
                   key={label}
@@ -390,7 +397,7 @@ export default function Header() {
                   onClick={() => setMobileOpen(false)}
                   className="bg-[#F8F2FA] rounded-xl py-3 text-center text-xs font-semibold text-[#74189B] hover:bg-purple-100/60 transition-colors"
                 >
-                  Wishlist
+                  Wishlist {wishlistCount > 0 ? `(${wishlistCount})` : ""}
                 </Link>
 
                 <Link

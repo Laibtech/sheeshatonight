@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   images: {
     remotePatterns: [
       {
@@ -11,6 +11,12 @@ const nextConfig = {
   },
   // Add empty turbopack config to silence Turbopack warnings
   turbopack: {},
+  allowedDevOrigins: [
+    'substance-manor-combines-minimize.trycloudflare.com',
+    '*.trycloudflare.com',
+    'localhost:3000',
+    '127.0.0.1:3000',
+  ],
   redirects: async () => [{ source: '/products', destination: '/shop', permanent: true }],
   headers: async () => [
     {

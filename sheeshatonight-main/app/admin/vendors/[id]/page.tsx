@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import {
   ArrowLeft,
   Store,
@@ -74,7 +75,15 @@ interface VendorDetailData {
   }>;
 }
 
-export default function AdminVendorDetailPage({ params }: { params: { id: string } }) {
+export default function AdminVendorDetailPage({
+  params,
+}: {
+  params?: Promise<{ id: string }> | { id: string };
+}) {
+  const routeParams = useParams();
+  const unwrapped = params ? ('then' in params ? React.use(params) : params) : null;
+  const vendorId = (routeParams?.id as string) || unwrapped?.id || '';
+
   const { addToast } = useToast();
   const [vendor, setVendor] = useState<VendorDetailData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,10 +91,11 @@ export default function AdminVendorDetailPage({ params }: { params: { id: string
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'documents' | 'settlements'>('products');
 
   const fetchVendor = async () => {
+    if (!vendorId) return;
     try {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`/api/admin/vendors/${params.id}`, {
+      const res = await fetch(`/api/admin/vendors/${vendorId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -107,15 +117,15 @@ export default function AdminVendorDetailPage({ params }: { params: { id: string
 
   useEffect(() => {
     fetchVendor();
-  }, [params.id]);
+  }, [vendorId]);
 
   const handleToggleStatus = async () => {
-    if (!vendor) return;
+    if (!vendor || !vendorId) return;
 
     try {
       setActionLoading(true);
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`/api/admin/vendors/${params.id}`, {
+      const res = await fetch(`/api/admin/vendors/${vendorId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

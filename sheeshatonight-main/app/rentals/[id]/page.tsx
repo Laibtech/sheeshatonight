@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useCart } from "@/contexts/CartContext";
 import { defaultRentals, Rental } from "../page";
 import {
   MapPin,
@@ -19,16 +20,77 @@ import {
   Heart,
   Calendar,
   CheckCircle2,
+  ShoppingBag,
+  CreditCard,
 } from "lucide-react";
 
 export default function RentalDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
+  const { addToCart } = useCart();
+
+  const [liveRental, setLiveRental] = useState<Rental | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [addedSuccess, setAddedSuccess] = useState(false);
+
+  // If ID is a DB product ID that isn't in defaultRentals, fetch it
+  useEffect(() => {
+    async function fetchRentalProduct() {
+      if (!id) return;
+      const foundInDefault = defaultRentals.find(
+        (r) => r.id === id || r.id.toLowerCase() === id.toLowerCase()
+      );
+      if (foundInDefault) return;
+
+      try {
+        const res = await fetch(`/api/products/${id}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          const p = json.data;
+          let img = "/silver.webp";
+          if (p.images) {
+            try {
+              const parsed = typeof p.images === "string" ? JSON.parse(p.images) : p.images;
+              if (Array.isArray(parsed) && parsed.length > 0) img = parsed[0];
+            } catch {
+              if (typeof p.images === "string") img = p.images;
+            }
+          }
+          setLiveRental({
+            id: String(p.id),
+            name: p.title || p.name,
+            vendor: p.vendor?.name || "Verified Lounge Partner",
+            location: p.vendor?.location || "Dubai, UAE",
+            eventType: "Private Setup",
+            price: Number(p.price) || 299,
+            rating: 4.9,
+            reviews: 28,
+            image: img,
+            verified: true,
+            duration: "4 Hours",
+            guests: "2–8",
+            description: p.description || "Turnkey luxury sheesha rental package.",
+            features: [
+              "1x Premium Hookah Unit",
+              "Dedicated Shisha Master",
+              "Unlimited Coconut Charcoal",
+              "Artisan Flavors & Fresh Heads",
+              "Free UAE White-Glove Delivery",
+            ],
+          });
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    }
+    fetchRentalProduct();
+  }, [id]);
 
   const rental: Rental =
     defaultRentals.find((r) => r.id === id) ||
     defaultRentals.find((r) => r.id.toLowerCase() === id?.toLowerCase()) ||
+    liveRental ||
     defaultRentals[0]!;
 
   const otherRentals = defaultRentals
@@ -62,6 +124,48 @@ export default function RentalDetailPage() {
     setSelectedFlavors((prev) =>
       prev.includes(f) ? prev.filter((item) => item !== f) : [...prev, f]
     );
+  };
+
+  const handleAddToCart = async (goToCheckout: boolean = false) => {
+    setIsAdding(true);
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          `rental_booking_${rental.id}`,
+          JSON.stringify({
+            rentalId: rental.id,
+            rentalName: rental.name,
+            date: date || "Flexible",
+            time: time || "Evening",
+            duration: rental.duration || "4 Hours",
+            guests: guestCount,
+            flavors: selectedFlavors,
+            customerName,
+            customerPhone,
+            deliveryAddress,
+          })
+        );
+      }
+      const ok = await addToCart(rental.id, 1, {
+        name: rental.name,
+        price: rental.price,
+        image: rental.image,
+        vendor: rental.vendor,
+        category: "RENTAL_PACKAGE",
+      });
+      if (ok) {
+        setAddedSuccess(true);
+        if (goToCheckout) {
+          router.push("/checkout");
+        } else {
+          setTimeout(() => setAddedSuccess(false), 4000);
+        }
+      }
+    } catch (err) {
+      console.error("Cart add error:", err);
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const handleWhatsAppBooking = () => {
@@ -275,17 +379,57 @@ export default function RentalDetailPage() {
 
                 <div className="booking-cta-group">
                   <button
+                    type="button"
+                    className="btn-primary-checkout"
+                    onClick={() => handleAddToCart(true)}
+                    disabled={isAdding}
+                  >
+                    <CreditCard size={19} />
+                    <span>{isAdding ? "Reserving..." : "Book Online & Checkout"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-add-cart"
+                    onClick={() => handleAddToCart(false)}
+                    disabled={isAdding}
+                  >
+                    {addedSuccess ? (
+                      <>
+                        <Check size={18} className="text-emerald-500" />
+                        <span>Added to Cart!</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag size={18} />
+                        <span>Add Package to Cart</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
                     className="btn-whatsapp"
                     onClick={handleWhatsAppBooking}
                   >
-                    <MessageCircle size={20} />
+                    <MessageCircle size={19} />
                     <span>Instant Reserve via WhatsApp</span>
                   </button>
-
-                  <Link href="/cart" className="btn-secondary-book">
-                    Proceed to Online Checkout
-                  </Link>
                 </div>
+
+                {addedSuccess && (
+                  <div className="rental-added-alert">
+                    <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                    <div>
+                      <strong>Package Added to Cart!</strong>
+                      <div className="alert-links">
+                        <Link href="/cart">View Cart</Link>
+                        <span>•</span>
+                        <Link href="/checkout">Checkout Now</Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <p className="booking-footnote">
                   No payment required upfront. Confirm details directly with
@@ -328,8 +472,7 @@ export default function RentalDetailPage() {
             background: #faf7fb;
             padding: 30px 0 90px;
             color: #27212b;
-            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
-              sans-serif;
+            font-family: 'Montserrat', sans-serif;
           }
 
           .container {
@@ -662,6 +805,59 @@ export default function RentalDetailPage() {
             gap: 10px;
           }
 
+          .btn-primary-checkout {
+            height: 50px;
+            background: linear-gradient(135deg, #74189b 0%, #55083e 100%);
+            color: white;
+            border: 0;
+            border-radius: 11px;
+            font-size: 14px;
+            font-weight: 750;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 6px 18px rgba(116, 24, 155, 0.28);
+            transition: all 0.2s;
+          }
+
+          .btn-primary-checkout:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(116, 24, 155, 0.38);
+          }
+
+          .btn-primary-checkout:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+          }
+
+          .btn-add-cart {
+            height: 48px;
+            background: #fbf5fc;
+            border: 1.5px solid #74189b;
+            color: #74189b;
+            border-radius: 11px;
+            font-size: 14px;
+            font-weight: 750;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            transition: all 0.2s;
+          }
+
+          .btn-add-cart:hover {
+            background: #74189b;
+            color: white;
+          }
+
+          .btn-add-cart:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+          }
+
           .btn-whatsapp {
             height: 50px;
             background: #25d366;
@@ -682,20 +878,36 @@ export default function RentalDetailPage() {
             background: #20bd5a;
           }
 
-          .btn-secondary-book {
-            text-align: center;
-            padding: 13px;
-            border: 1px solid #74189b;
-            color: #74189b;
-            border-radius: 11px;
-            font-size: 13px;
-            font-weight: 750;
-            text-decoration: none;
-            transition: background 0.2s;
+          .rental-added-alert {
+            margin-top: 14px;
+            padding: 12px 14px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12.5px;
+            color: #065f46;
           }
 
-          .btn-secondary-book:hover {
-            background: #fbf5fc;
+          .rental-added-alert strong {
+            display: block;
+            color: #047857;
+            font-size: 13px;
+          }
+
+          .alert-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 3px;
+          }
+
+          .alert-links a {
+            color: #047857;
+            font-weight: 700;
+            text-decoration: underline;
           }
 
           .booking-footnote {

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import {
   ArrowLeft,
   User,
@@ -62,7 +63,15 @@ interface CustomerDetail {
   }>;
 }
 
-export default function AdminCustomerDetailPage({ params }: { params: { id: string } }) {
+export default function AdminCustomerDetailPage({
+  params,
+}: {
+  params?: Promise<{ id: string }> | { id: string };
+}) {
+  const routeParams = useParams();
+  const unwrapped = params ? ('then' in params ? React.use(params) : params) : null;
+  const customerId = (routeParams?.id as string) || unwrapped?.id || '';
+
   const { addToast } = useToast();
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,10 +79,11 @@ export default function AdminCustomerDetailPage({ params }: { params: { id: stri
 
   useEffect(() => {
     const fetchCustomer = async () => {
+      if (!customerId) return;
       try {
         setLoading(true);
         const token = localStorage.getItem('auth_token');
-        const res = await fetch(`/api/admin/customers/${params.id}`, {
+        const res = await fetch(`/api/admin/customers/${customerId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (res.ok) {
@@ -93,7 +103,7 @@ export default function AdminCustomerDetailPage({ params }: { params: { id: stri
       }
     };
     fetchCustomer();
-  }, [params.id]);
+  }, [customerId]);
 
   const formatAED = (amount: number = 0) => {
     return new Intl.NumberFormat('en-AE', {

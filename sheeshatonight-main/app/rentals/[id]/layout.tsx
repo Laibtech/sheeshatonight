@@ -2,12 +2,13 @@ import { Metadata } from 'next';
 import { createMetadata, generateBreadcrumbsJsonLd, generateProductJsonLd } from '@/lib/seo';
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }> | { id: string };
   children: React.ReactNode;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const id = params.id;
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
 
   return createMetadata({
     title: `Luxury Sheesha Rental Package | SheeshaTonight Dubai`,
@@ -25,8 +26,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default function RentalDetailLayout({ params, children }: Props) {
-  const id = params.id;
+export default async function RentalDetailLayout({ params, children }: Props) {
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
 
   const productJsonLd = generateProductJsonLd({
     id,

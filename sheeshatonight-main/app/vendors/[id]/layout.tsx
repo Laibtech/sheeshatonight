@@ -8,12 +8,13 @@ if (process.env.DATABASE_URL){
 import { createMetadata, generateStoreJsonLd, generateBreadcrumbsJsonLd } from '@/lib/seo';
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }> | { id: string };
   children: React.ReactNode;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const id = params.id;
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
 
   try {
     const vendor = await prisma.vendor.findFirst({
@@ -51,7 +52,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function VendorLayout({ params, children }: Props) {
-  const id = params.id;
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
   let storeJsonLd: any = null;
 
   try {

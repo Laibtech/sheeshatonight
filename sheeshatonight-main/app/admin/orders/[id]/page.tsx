@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import {
   ArrowLeft,
   User,
@@ -94,9 +94,13 @@ interface OrderDetailData {
 export default function AdminOrderDetailPage({
   params,
 }: {
-  params: { id: string };
+  params?: Promise<{ id: string }> | { id: string };
 }) {
   const router = useRouter();
+  const routeParams = useParams();
+  const unwrapped = params ? ('then' in params ? React.use(params) : params) : null;
+  const orderId = (routeParams?.id as string) || unwrapped?.id || '';
+
   const { addToast } = useToast();
   const [order, setOrder] = useState<OrderDetailData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,10 +110,11 @@ export default function AdminOrderDetailPage({
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   const fetchOrder = async () => {
+    if (!orderId) return;
     try {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`/api/admin/orders/${params.id}`, {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -133,7 +138,7 @@ export default function AdminOrderDetailPage({
 
   useEffect(() => {
     fetchOrder();
-  }, [params.id]);
+  }, [orderId]);
 
   const handleUpdateStatus = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,7 +147,7 @@ export default function AdminOrderDetailPage({
     try {
       setUpdating(true);
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`/api/admin/orders/${params.id}`, {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

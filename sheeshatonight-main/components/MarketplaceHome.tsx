@@ -4,6 +4,7 @@ import './MarketplaceHome.css';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Heart, MapPin, ShieldCheck, ShoppingBag, Star, Truck, Users, Zap } from 'lucide-react';
+import { useWishlist } from '@/contexts/WishlistContext';
 
 interface Product {
   id: string;
@@ -57,12 +58,30 @@ function imageFrom(product: Product) {
 function ProductCard({ product }: { product: Product }) {
   const title = product.title || product.name || 'Premium Sheesha Product';
   const price = Number(product.price || 0);
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const wishlisted = isInWishlist(product.id);
 
   return (
     <article className="market-product-card">
       <div className="market-product-image">
         <img src={imageFrom(product)} alt={title} onError={(event) => { event.currentTarget.src = '/hero-banner.png'; }} />
-        <button className="market-wishlist" aria-label={`Save ${title}`}><Heart className="w-4 h-4" /></button>
+        <button
+          type="button"
+          className="market-wishlist"
+          onClick={() =>
+            toggleWishlist(product.id, {
+              title,
+              name: title,
+              price,
+              image: imageFrom(product),
+              vendor: product.vendor,
+            })
+          }
+          aria-label={`Save ${title}`}
+          style={{ cursor: 'pointer' }}
+        >
+          <Heart className={`w-4 h-4 ${wishlisted ? 'fill-[#74189B] text-[#74189B]' : 'text-slate-500'}`} />
+        </button>
       </div>
       <div className="market-product-body">
         <p className="market-product-vendor">{product.vendor || 'Verified vendor'}</p>

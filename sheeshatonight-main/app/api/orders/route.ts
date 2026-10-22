@@ -81,6 +81,12 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
             issuedAt: order.invoice.issuedAt.toISOString(),
           }
         : undefined,
+      customer: {
+        name: user.name || 'Valued Customer',
+        email: user.email,
+        phone: user.phone || '',
+      },
+      shippingAddress: (order as any).shippingAddress || '',
       createdAt: order.createdAt,
     }));
 

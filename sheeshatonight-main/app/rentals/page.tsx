@@ -2,9 +2,10 @@
 
 import { useMemo, useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useCart } from "@/contexts/CartContext";
 import {
   Search,
   Check,
@@ -21,6 +22,7 @@ import {
   MessageCircle,
   Truck,
   CheckCircle2,
+  CreditCard,
 } from "lucide-react";
 
 export type Rental = {
@@ -342,6 +344,48 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
   // Selected rental for quick booking modal
   const [selectedRental, setSelectedRental] = useState<Rental | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [modalAdded, setModalAdded] = useState(false);
+  const [isModalAdding, setIsModalAdding] = useState(false);
+  const [cartAddingId, setCartAddingId] = useState<string | null>(null);
+  const [cartSuccessId, setCartSuccessId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{
+    title: string;
+    subtitle: string;
+    rental: Rental;
+  } | null>(null);
+
+  const { addToCart } = useCart();
+
+  const handleAddToCart = async (rental: Rental, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setCartAddingId(rental.id);
+    try {
+      const ok = await addToCart(rental.id, 1, {
+        name: rental.name,
+        price: rental.price,
+        image: rental.image,
+        vendor: rental.vendor,
+        category: "RENTAL_PACKAGE",
+      });
+      if (ok) {
+        setCartSuccessId(rental.id);
+        setToastMessage({
+          title: "Rental Package Added to Cart!",
+          subtitle: `${rental.name} (AED ${rental.price}) is ready in your cart.`,
+          rental,
+        });
+        setTimeout(() => setCartSuccessId(null), 3000);
+      }
+    } catch (err) {
+      console.error("Failed to add rental to cart:", err);
+    } finally {
+      setCartAddingId(null);
+    }
+  };
+
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([
     "Double Apple",
     "Mint",
@@ -614,7 +658,13 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
                   rental={rental}
                   isWishlisted={wishlist.includes(rental.id)}
                   onToggleWishlist={(e) => toggleWishlist(rental.id, e)}
-                  onSelectRental={() => setSelectedRental(rental)}
+                  onSelectRental={() => {
+                    setModalAdded(false);
+                    setSelectedRental(rental);
+                  }}
+                  onAddToCart={(e) => handleAddToCart(rental, e)}
+                  isAdding={cartAddingId === rental.id}
+                  isSuccess={cartSuccessId === rental.id}
                 />
               ))}
             </div>
@@ -654,7 +704,10 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
         {selectedRental && (
           <div
             className="filter-backdrop"
-            onClick={() => setSelectedRental(null)}
+            onClick={() => {
+              setModalAdded(false);
+              setSelectedRental(null);
+            }}
           >
             <div
               className="booking-modal-card"
@@ -662,19 +715,54 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             >
               <div className="modal-header">
                 <div>
-                  <span className="modal-subtitle">RESERVATION INQUIRY</span>
+                  <span className="modal-subtitle">
+                    {modalAdded ? "CONFIRMATION" : "RESERVATION & ONLINE BOOKING"}
+                  </span>
                   <h3>{selectedRental.name}</h3>
                 </div>
                 <button
                   className="close-modal-btn"
-                  onClick={() => setSelectedRental(null)}
+                  onClick={() => {
+                    setModalAdded(false);
+                    setSelectedRental(null);
+                  }}
                   aria-label="Close"
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              {bookingSuccess ? (
+              {modalAdded ? (
+                <div className="modal-cart-success">
+                  <div className="success-icon">
+                    <CheckCircle2 size={36} className="text-emerald-500" />
+                  </div>
+                  <h4>Rental Package Added to Cart!</h4>
+                  <p>
+                    <strong>{selectedRental.name}</strong> (AED {selectedRental.price}) is reserved in your cart. You can proceed directly to online checkout or review your cart.
+                  </p>
+                  <div className="modal-success-buttons">
+                    <Link href="/checkout" className="btn-modal-checkout">
+                      <CreditCard size={18} />
+                      <span>Proceed to Checkout Now</span>
+                    </Link>
+                    <Link href="/cart" className="btn-modal-cart">
+                      <ShoppingBag size={18} />
+                      <span>View Shopping Cart</span>
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn-modal-continue"
+                      onClick={() => {
+                        setModalAdded(false);
+                        setSelectedRental(null);
+                      }}
+                    >
+                      Continue Browsing Rentals
+                    </button>
+                  </div>
+                </div>
+              ) : bookingSuccess ? (
                 <div className="booking-success-box">
                   <div className="success-icon">
                     <Check size={28} className="text-emerald-600" />
@@ -790,6 +878,50 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
 
                   <div className="modal-actions">
                     <button
+                      className="web-book-btn"
+                      disabled={isModalAdding}
+                      onClick={async () => {
+                        setIsModalAdding(true);
+                        try {
+                          if (typeof window !== "undefined") {
+                            localStorage.setItem(
+                              `rental_booking_${selectedRental.id}`,
+                              JSON.stringify({
+                                rentalId: selectedRental.id,
+                                rentalName: selectedRental.name,
+                                date: date || "Flexible",
+                                time: time || "Evening",
+                                duration: selectedRental.duration || duration,
+                                guests: selectedRental.guests || guests,
+                                flavors: selectedFlavors,
+                                customerName: bookingForm.name,
+                                customerPhone: bookingForm.phone,
+                                deliveryAddress: bookingForm.address,
+                              })
+                            );
+                          }
+                          const ok = await addToCart(selectedRental.id, 1, {
+                            name: selectedRental.name,
+                            price: selectedRental.price,
+                            image: selectedRental.image,
+                            vendor: selectedRental.vendor,
+                            category: "RENTAL_PACKAGE",
+                          });
+                          if (ok) {
+                            setModalAdded(true);
+                          }
+                        } catch (err) {
+                          console.error("Cart add error:", err);
+                        } finally {
+                          setIsModalAdding(false);
+                        }
+                      }}
+                    >
+                      <ShoppingBag size={18} />
+                      <span>{isModalAdding ? "Adding to Cart..." : "Book Online (Add to Cart)"}</span>
+                    </button>
+
+                    <button
                       className="whatsapp-book-btn"
                       onClick={() => handleWhatsAppBooking(selectedRental)}
                     >
@@ -801,11 +933,39 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
                       href={`/rentals/${selectedRental.id}`}
                       className="view-full-btn"
                     >
-                      View Full Details & Options →
+                      View Full Details & Flavor Options →
                     </Link>
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* TOAST NOTIFICATION */}
+        {toastMessage && (
+          <div className="rental-toast-notification">
+            <div className="toast-left">
+              <CheckCircle2 size={24} className="toast-check-icon" />
+              <div>
+                <strong className="toast-title">{toastMessage.title}</strong>
+                <p className="toast-desc">{toastMessage.subtitle}</p>
+              </div>
+            </div>
+            <div className="toast-right">
+              <Link href="/cart" className="toast-btn cart">
+                View Cart
+              </Link>
+              <Link href="/checkout" className="toast-btn checkout">
+                Checkout
+              </Link>
+              <button
+                onClick={() => setToastMessage(null)}
+                className="toast-close"
+                aria-label="Close notification"
+              >
+                <X size={16} />
+              </button>
             </div>
           </div>
         )}
@@ -930,8 +1090,7 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             min-height: 100vh;
             background: #fcfafc;
             color: #29252b;
-            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
-              Roboto, sans-serif;
+            font-family: 'Montserrat', sans-serif;
             width: 100%;
             max-width: 100vw;
             overflow-x: hidden;
@@ -1391,6 +1550,59 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             transform: translateY(-1px);
           }
 
+          .rental-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+          }
+
+          .card-cart-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px;
+            border-radius: 9px;
+            background: #fbf5fc;
+            border: 1.5px solid #74189b;
+            color: #74189b;
+            font-size: 12px;
+            font-weight: 750;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+          }
+
+          .card-cart-btn:hover {
+            background: #74189b;
+            color: white;
+            transform: translateY(-1px);
+          }
+
+          .card-cart-btn.added {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+          }
+
+          .card-cart-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+          }
+
+          .spinner-small {
+            width: 13px;
+            height: 13px;
+            border: 2px solid currentColor;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spinSmall 0.6s linear infinite;
+          }
+
+          @keyframes spinSmall {
+            to { transform: rotate(360deg); }
+          }
+
           /* CROSS-PROMO BANNER */
 
           .shop-cross-promo {
@@ -1668,6 +1880,230 @@ function RentalsContent({ rentals = defaultRentals }: Props) {
             font-weight: 700;
             text-decoration: none;
             padding: 8px 0;
+          }
+
+          .web-book-btn {
+            height: 48px;
+            border: 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #74189b 0%, #55083e 100%);
+            color: white;
+            font-weight: 750;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(116, 24, 155, 0.25);
+            transition: all 0.2s;
+          }
+
+          .web-book-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(116, 24, 155, 0.35);
+          }
+
+          .web-book-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+          }
+
+          /* MODAL CART SUCCESS */
+          .modal-cart-success {
+            padding: 35px 25px;
+            text-align: center;
+          }
+
+          .modal-cart-success .success-icon {
+            width: 64px;
+            height: 64px;
+            background: #ecfdf5;
+            color: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+          }
+
+          .modal-cart-success h4 {
+            font-size: 20px;
+            font-weight: 800;
+            margin: 0 0 10px;
+            color: #1c1917;
+          }
+
+          .modal-cart-success p {
+            font-size: 13.5px;
+            color: #57534e;
+            line-height: 1.5;
+            max-width: 440px;
+            margin: 0 auto 24px;
+          }
+
+          .modal-success-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .btn-modal-checkout {
+            height: 48px;
+            background: linear-gradient(135deg, #74189b 0%, #55083e 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: 750;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            box-shadow: 0 6px 18px rgba(116, 24, 155, 0.25);
+            transition: all 0.2s;
+          }
+
+          .btn-modal-checkout:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(116, 24, 155, 0.35);
+          }
+
+          .btn-modal-cart {
+            height: 46px;
+            background: #fbf5fc;
+            border: 1.5px solid #74189b;
+            color: #74189b;
+            border-radius: 10px;
+            font-weight: 750;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+          }
+
+          .btn-modal-cart:hover {
+            background: #74189b;
+            color: white;
+          }
+
+          .btn-modal-continue {
+            background: transparent;
+            border: 0;
+            color: #78716c;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 0;
+          }
+
+          .btn-modal-continue:hover {
+            color: #1c1917;
+          }
+
+          /* TOAST NOTIFICATION */
+          .rental-toast-notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            background: rgba(43, 17, 56, 0.95);
+            backdrop-filter: blur(12px);
+            color: white;
+            border: 1px solid rgba(241, 165, 29, 0.4);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            max-width: 520px;
+            animation: toastSlideUp 0.3s ease;
+          }
+
+          @keyframes toastSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+
+          .toast-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+
+          .toast-check-icon {
+            color: #10b981;
+            flex-shrink: 0;
+          }
+
+          .toast-title {
+            display: block;
+            font-size: 14px;
+            font-weight: 750;
+            color: #fff;
+          }
+
+          .toast-desc {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.78);
+            line-height: 1.4;
+          }
+
+          .toast-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+          }
+
+          .toast-btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 750;
+            text-decoration: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+          }
+
+          .toast-btn.cart {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+          }
+
+          .toast-btn.cart:hover {
+            background: rgba(255, 255, 255, 0.25);
+          }
+
+          .toast-btn.checkout {
+            background: #f1a51d;
+            color: #2b1138;
+          }
+
+          .toast-btn.checkout:hover {
+            background: #e29712;
+          }
+
+          .toast-close {
+            background: transparent;
+            border: 0;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .toast-close:hover {
+            color: white;
           }
 
           .booking-success-box {
@@ -2086,11 +2522,17 @@ function RentalCard({
   isWishlisted,
   onToggleWishlist,
   onSelectRental,
+  onAddToCart,
+  isAdding,
+  isSuccess,
 }: {
   rental: Rental;
   isWishlisted: boolean;
   onToggleWishlist: (e: React.MouseEvent) => void;
   onSelectRental: () => void;
+  onAddToCart: (e: React.MouseEvent) => void;
+  isAdding?: boolean;
+  isSuccess?: boolean;
 }) {
   return (
     <article className="rental-card">
@@ -2128,9 +2570,32 @@ function RentalCard({
             <strong>AED {rental.price}</strong>
           </div>
 
-          <button className="book-btn" onClick={onSelectRental}>
-            View & Book
-          </button>
+          <div className="rental-card-actions">
+            <button
+              className={`card-cart-btn ${isSuccess ? "added" : ""}`}
+              onClick={onAddToCart}
+              disabled={isAdding}
+              title="Add this package to cart"
+            >
+              {isAdding ? (
+                <div className="spinner-small" />
+              ) : isSuccess ? (
+                <>
+                  <Check size={14} />
+                  <span>Added</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag size={14} />
+                  <span>Add to Cart</span>
+                </>
+              )}
+            </button>
+
+            <button className="book-btn" onClick={onSelectRental}>
+              Details
+            </button>
+          </div>
         </div>
       </div>
     </article>

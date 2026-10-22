@@ -112,11 +112,22 @@ export default function CartPage() {
                   </div>
 
                   <div className="item-details">
-                    <Link href={`/products/${item.productId}`} className="item-name">
+                    <Link
+                      href={
+                        item.category === "RENTAL_PACKAGE" ||
+                        item.category === "RENTAL" ||
+                        item.productId.includes("-")
+                          ? `/rentals/${item.productId}`
+                          : `/products/${item.productId}`
+                      }
+                      className="item-name"
+                    >
                       {item.name}
                     </Link>
                     <p className="item-vendor">{item.vendor}</p>
-                    <p className="item-category">{item.category}</p>
+                    <p className="item-category">
+                      {item.category === "RENTAL_PACKAGE" ? "Sheesha Rental Package" : item.category}
+                    </p>
                     <p className="item-price">
                       {item.price === null ? "Price unavailable" : `AED ${formatPrice(item.price)}`}
                     </p>

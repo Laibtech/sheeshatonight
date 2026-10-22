@@ -18,7 +18,7 @@
   min-height: 100vh;
   background: #fff;
   color: var(--text);
-  font-family: "Inter", "Poppins", Arial, sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .vendor-page a {
@@ -86,7 +86,7 @@
 }
 
 .vendor-logo-box span {
-  font-family: Georgia, serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 34px;
   font-weight: bold;
 }

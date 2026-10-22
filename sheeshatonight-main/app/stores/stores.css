@@ -50,7 +50,7 @@
 .stores-hero h1 {
   max-width: 680px;
   margin: 0;
-  font-family: "Inter", sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: clamp(42px, 4vw, 60px);
   line-height: 1.03;
   font-weight: 700;
@@ -542,7 +542,7 @@
 
 .store-cta h2 em {
   color: #76216f;
-  font-family: "Cormorant Garamond", serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .store-cta p {
@@ -722,7 +722,7 @@
 
 .store-popup {
   padding: 18px;
-  font-family: "Inter", sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .popup-header {

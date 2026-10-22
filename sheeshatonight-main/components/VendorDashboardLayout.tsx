@@ -398,6 +398,35 @@ export function VendorDashboardLayout({
             </div>
           ))}
         </nav>
+
+        <div className="sidebar-bottom">
+          <Link
+            href="/vendor/settings"
+            className="vendor-account"
+            onClick={() => setMobileOpen(false)}
+          >
+            <div className="account-avatar">
+              {vendorName ? vendorName.charAt(0).toUpperCase() : "V"}
+            </div>
+
+            <div className="overflow-hidden">
+              <strong className="truncate max-w-[150px]">{vendorName}</strong>
+              <span>Store Management</span>
+            </div>
+          </Link>
+
+          <button
+            type="button"
+            className="logout-button"
+            onClick={() => {
+              setMobileOpen(false);
+              handleLogout();
+            }}
+          >
+            <LogOut size={17} />
+            Logout
+          </button>
+        </div>
       </aside>
 
       {/* MAIN */}
@@ -458,6 +487,16 @@ export function VendorDashboardLayout({
                 <span>Store Account</span>
               </div>
             </Link>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="header-logout-button"
+              title="Logout from vendor dashboard"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </header>
 
@@ -473,14 +512,7 @@ export function VendorDashboardLayout({
           margin: 0;
           background: #faf9fb;
           color: #29242b;
-          font-family:
-            Inter,
-            ui-sans-serif,
-            system-ui,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            sans-serif;
+          font-family: 'Montserrat', sans-serif;
         }
 
         a {
@@ -808,6 +840,29 @@ export function VendorDashboardLayout({
           font-size: 9px;
         }
 
+        .header-logout-button {
+          height: 38px;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 0 12px;
+          border: 1px solid #fee2e2;
+          border-radius: 9px;
+          background: #fff;
+          color: #e11d48;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          flex-shrink: 0;
+        }
+
+        .header-logout-button:hover {
+          background: #fff1f2;
+          border-color: #fca5a5;
+          color: #be123c;
+        }
+
         .vendor-content {
           width: min(1440px, 100%);
           margin: 0 auto;
@@ -917,6 +972,17 @@ export function VendorDashboardLayout({
             border-radius: 8px;
             background: #fff;
             cursor: pointer;
+          }
+
+          .vendor-mobile-sidebar .vendor-nav {
+            flex: 1;
+            overflow-y: auto;
+          }
+
+          .vendor-mobile-sidebar .sidebar-bottom {
+            margin-top: auto;
+            flex-shrink: 0;
+            background: #fff;
           }
         }
 

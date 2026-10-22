@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/contexts/CartContext';
+import { useWishlist } from '@/contexts/WishlistContext';
 import {
   Heart,
   ShoppingBag,
@@ -48,198 +49,100 @@ function getAuthToken(): string | null {
 
 export default function WishlistPage() {
   const { addToCart } = useCart();
-  const [items, setItems] = useState<WishlistProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    wishlistItems,
+    removeFromWishlist,
+    clearWishlist,
+    loading: wishlistLoading,
+    refreshWishlist,
+  } = useWishlist();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [addedToast, setAddedToast] = useState<string | null>(null);
-
-  // Recommended products fallback if wishlist has items
   const [recommended, setRecommended] = useState<WishlistProduct[]>([]);
 
-  const fetchWishlist = useCallback(async () => {
-    setLoading(true);
-    try {
-      const token = getAuthToken();
-      let serverItems: WishlistProduct[] = [];
-
-      // 1. Try fetching from server if logged in
-      if (token) {
-        try {
-          const res = await fetch('/api/wishlist', {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: 'no-store',
-          });
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data?.items)) {
-            serverItems = json.data.items.map((it: any) => {
-              const p = it.product || {};
-              let img = '/Categories/Buy Sheesha.webp';
+  // Fetch recommended products from catalog
+  useEffect(() => {
+    async function loadRecommended() {
+      try {
+        const res = await fetch('/api/products?limit=8');
+        const json = await res.json();
+        const allProducts: any[] = Array.isArray(json.data) ? json.data : (json.data?.products || []);
+        if (allProducts.length > 0) {
+          setRecommended(
+            allProducts.slice(0, 4).map((p: any) => {
+              let img = p.image || '/Categories/Buy Sheesha.webp';
               if (p.images) {
                 try {
                   const parsed = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
                   if (Array.isArray(parsed) && parsed[0]) img = parsed[0];
                   else if (typeof parsed === 'string') img = parsed;
                 } catch {
-                  img = p.images;
+                  if (typeof p.images === 'string') img = p.images;
                 }
               }
               return {
-                id: p.id || it.productId,
+                id: String(p.id),
                 name: p.title || p.name || 'Luxury Sheesha Item',
                 price: Number(p.price) || 0,
-                currency: p.currency || 'AED',
+                currency: 'AED',
                 image: img,
                 type: p.type || 'SHEESHA',
-                category: p.type || 'Accessories',
-                vendorId: p.vendor?.id,
-                vendorName: p.vendor?.name || 'Verified Lounge Partner',
-                vendorSlug: p.vendor?.slug || p.vendor?.id,
-                rating: 4.9,
-                inStock: p.stock === undefined || p.stock > 0,
+                vendorName: p.vendor || p.brand || 'SheeshaTonight Lounge',
               };
-            });
-          }
-        } catch {
-          // Fallback gracefully without console error
-        }
-      }
-
-      // 2. Also check local storage 'st_wishlist' (which stores product IDs from /shop)
-      let localIds: string[] = [];
-      try {
-        const raw = localStorage.getItem('st_wishlist');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) {
-            localIds = parsed.map(String);
-          }
+            })
+          );
         }
       } catch {}
-
-      // Fetch products catalog to resolve IDs
-      const res = await fetch('/api/products?limit=100');
-      const json = await res.json();
-      const allProducts: any[] = Array.isArray(json.data) ? json.data : (json.data?.products || []);
-
-      if (serverItems.length > 0) {
-        setItems(serverItems);
-      } else if (localIds.length > 0) {
-        const matched = allProducts
-          .filter((p: any) => localIds.includes(String(p.id)))
-          .map((p: any) => {
-            let img = p.image || '/Categories/Buy Sheesha.webp';
-            if (p.images) {
-              try {
-                const parsed = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
-                if (Array.isArray(parsed) && parsed[0]) img = parsed[0];
-                else if (typeof parsed === 'string') img = parsed;
-              } catch {
-                if (typeof p.images === 'string') img = p.images;
-              }
-            }
-            return {
-              id: String(p.id),
-              name: p.title || p.name || 'Sheesha Item',
-              price: Number(p.price) || 0,
-              currency: 'AED',
-              image: img,
-              type: p.type || 'SHEESHA',
-              category: p.category || p.type || 'Accessories',
-              vendorId: p.vendorId || p.vendor?.id,
-              vendorName: p.vendor || p.vendorName || p.brand || 'Verified Vendor',
-              vendorSlug: p.vendorSlug || p.vendor?.slug || p.vendorId,
-              rating: 4.9,
-              inStock: (p.stock ?? 1) > 0,
-            };
-          });
-        setItems(matched);
-      } else {
-        setItems([]);
-      }
-
-      // Populate recommended products from catalog
-      if (allProducts.length > 0) {
-        setRecommended(
-          allProducts.slice(0, 4).map((p: any) => {
-            let img = p.image || '/Categories/Buy Sheesha.webp';
-            if (p.images) {
-              try {
-                const parsed = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
-                if (Array.isArray(parsed) && parsed[0]) img = parsed[0];
-                else if (typeof parsed === 'string') img = parsed;
-              } catch {
-                if (typeof p.images === 'string') img = p.images;
-              }
-            }
-            return {
-              id: String(p.id),
-              name: p.title || p.name,
-              price: Number(p.price) || 0,
-              currency: 'AED',
-              image: img,
-              type: p.type || 'SHEESHA',
-              vendorName: p.vendor || p.brand || 'Top Vendor',
-            };
-          })
-        );
-      }
-    } catch {
-      // Fallback gracefully without console error
-    } finally {
-      setLoading(false);
     }
+    loadRecommended();
   }, []);
 
-  useEffect(() => {
-    fetchWishlist();
-  }, [fetchWishlist]);
+  // Format wishlist items
+  const items: WishlistProduct[] = React.useMemo(() => {
+    return wishlistItems.map((it) => {
+      const p = (it.product || {}) as any;
+      let img = '/Categories/Buy Sheesha.webp';
+      if (p.images) {
+        try {
+          const parsed = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
+          if (Array.isArray(parsed) && parsed[0]) img = parsed[0];
+          else if (typeof parsed === 'string') img = parsed;
+        } catch {
+          if (typeof p.images === 'string') img = p.images;
+        }
+      } else if (p.image) {
+        img = p.image;
+      }
+      return {
+        id: String(p.id || it.productId),
+        name: p.title || p.name || 'Luxury Sheesha Item',
+        price: Number(p.price) || 0,
+        currency: p.currency || 'AED',
+        image: img,
+        type: p.type || 'SHEESHA',
+        category: p.category || p.type || 'Accessories',
+        vendorId: p.vendor?.id,
+        vendorName: p.vendor?.name || 'Verified Lounge Partner',
+        vendorSlug: p.vendor?.slug || p.vendor?.id,
+        rating: 4.9,
+        inStock: p.stock === undefined || p.stock > 0,
+      };
+    });
+  }, [wishlistItems]);
+
+  const loading = wishlistLoading;
 
   // Remove single item
   const handleRemove = async (id: string) => {
-    // 1. Remove from state
-    setItems((prev) => prev.filter((item) => item.id !== id));
-
-    // 2. Remove from local storage
-    try {
-      const raw = localStorage.getItem('st_wishlist');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          const updated = parsed.filter((x: any) => String(x) !== id);
-          localStorage.setItem('st_wishlist', JSON.stringify(updated));
-        }
-      }
-    } catch {}
-
-    // 3. Remove from server if token
-    const token = getAuthToken();
-    if (token) {
-      try {
-        await fetch(`/api/wishlist?productId=${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } catch {}
-    }
+    await removeFromWishlist(id);
   };
 
   // Clear all
   const handleClearAll = async () => {
     if (!window.confirm('Are you sure you want to remove all saved items from your wishlist?')) return;
-    setItems([]);
-    try {
-      localStorage.removeItem('st_wishlist');
-    } catch {}
-    const token = getAuthToken();
-    if (token) {
-      try {
-        await fetch('/api/wishlist/clear', {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } catch {}
-    }
+    await clearWishlist();
   };
 
   // Move single item to Cart

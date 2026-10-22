@@ -17,7 +17,7 @@
   min-height: 100vh;
   background: #fff;
   color: var(--text);
-  font-family: "Poppins", "Inter", Arial, sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .vendors-page a {

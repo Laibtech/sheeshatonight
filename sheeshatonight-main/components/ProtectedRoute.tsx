@@ -98,7 +98,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const res = await fetch('/api/auth/me', { headers, cache: 'no-store' });
+        const res = await fetch('/api/auth/me', { headers, credentials: 'include', cache: 'no-store' });
 
         if (res.ok) {
           const resData = await res.json();
@@ -210,7 +210,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               <Store className="w-8 h-8" />
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 font-serif tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               Vendor Portal Access
             </h1>
 
@@ -282,7 +282,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-4 text-amber-600">
             <ShieldAlert className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900 font-serif">Access Restricted</h1>
+          <h1 className="text-xl font-bold text-slate-900">Access Restricted</h1>
           <p className="mt-2 text-xs text-slate-600 leading-relaxed">
             This area requires {unauthorizedState.targetRole} authorization.
           </p>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import {
   Search,
   Heart,
@@ -23,6 +24,7 @@ import {
   Truck,
   Flame,
   ArrowRight,
+  ShoppingBag,
 } from "lucide-react";
 
 export type Product = {
@@ -62,9 +64,16 @@ export default function ShopPage() {
   const [maxPrice, setMaxPrice] = useState(1000);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileFilters, setMobileFilters] = useState(false);
-  const [wishlist, setWishlist] = useState<(string | number)[]>([]);
+  const { wishlistIds, isInWishlist, toggleWishlist: contextToggleWishlist } = useWishlist();
+  const wishlist = wishlistIds;
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastData, setToastData] = useState<{
+    id: number;
+    message: string;
+    type: 'cart' | 'wishlist' | 'info';
+    actionHref?: string;
+    actionLabel?: string;
+  } | null>(null);
   const [addedAnimationId, setAddedAnimationId] = useState<string | number | null>(null);
   const [viewOnlyWishlist, setViewOnlyWishlist] = useState(false);
 
@@ -117,12 +126,6 @@ export default function ShopPage() {
 
     fetchLiveProducts();
 
-    try {
-      const savedWishlist = localStorage.getItem("st_wishlist");
-      if (savedWishlist) {
-        setWishlist(JSON.parse(savedWishlist));
-      }
-    } catch (e) {}
   }, []);
 
   const activeProducts = dbProducts;
@@ -135,26 +138,33 @@ export default function ShopPage() {
     return ["All Vendors", ...Array.from(vSet)];
   }, [activeProducts]);
 
-  const toggleWishlist = (id: string | number) => {
-    setWishlist((current) => {
-      const updated = current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id];
-      try {
-        localStorage.setItem("st_wishlist", JSON.stringify(updated));
-      } catch (e) {}
+  const toggleWishlist = async (id: string | number) => {
+    const product = activeProducts.find((p) => String(p.id) === String(id));
+    const result = await contextToggleWishlist(
+      id,
+      product
+        ? {
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            vendor: product.vendor,
+            category: product.category,
+          }
+        : undefined
+    );
 
-      const product = activeProducts.find((p) => p.id === id);
-      if (product) {
-        const isAdded = !current.includes(id);
-        showToast(
-          isAdded
-            ? `Added "${product.name}" to your wishlist!`
-            : `Removed "${product.name}" from wishlist.`
-        );
-      }
-      return updated;
-    });
+    if (product) {
+      showToast(
+        result.added
+          ? `Added "${product.name}" to your wishlist!`
+          : `Removed "${product.name}" from wishlist.`,
+        {
+          type: 'wishlist',
+          actionHref: '/wishlist',
+          actionLabel: 'View Wishlist →',
+        }
+      );
+    }
   };
 
   const handleAddToCart = async (product: Product, quantity = 1) => {
@@ -178,18 +188,47 @@ export default function ShopPage() {
     }
   };
 
-  const showToast = (message: string) => {
-    setToastMessage(message);
+  const showToast = (
+    message: string,
+    opts?: { type?: 'cart' | 'wishlist' | 'info'; actionHref?: string; actionLabel?: string }
+  ) => {
+    let type = opts?.type;
+    let actionHref = opts?.actionHref;
+    let actionLabel = opts?.actionLabel;
+
+    if (!type) {
+      if (message.toLowerCase().includes('wishlist')) {
+        type = 'wishlist';
+        actionHref = '/wishlist';
+        actionLabel = 'View Wishlist';
+      } else if (message.toLowerCase().includes('cart') || message.toLowerCase().includes('bag')) {
+        type = 'cart';
+        actionHref = '/cart';
+        actionLabel = 'View Cart';
+      } else {
+        type = 'info';
+      }
+    }
+
+    const id = Date.now();
+    setToastData({
+      id,
+      message,
+      type,
+      actionHref,
+      actionLabel,
+    });
+
     setTimeout(() => {
-      setToastMessage((cur) => (cur === message ? null : cur));
-    }, 3200);
+      setToastData((cur) => (cur?.id === id ? null : cur));
+    }, 3800);
   };
 
   const filteredProducts = useMemo(() => {
     let result = [...activeProducts];
 
     if (viewOnlyWishlist) {
-      result = result.filter((product) => wishlist.includes(product.id));
+      result = result.filter((product) => wishlist.includes(String(product.id)));
     }
 
     if (searchQuery.trim()) {
@@ -253,16 +292,40 @@ export default function ShopPage() {
     <>
       <Header />
       <main className="shop-page" suppressHydrationWarning>
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="toast-notification">
-          <div className="toast-icon">
-            <Check size={16} />
+      {/* Luxury Toast Notification */}
+      {toastData && (
+        <div className={`luxury-toast-notification toast-${toastData.type}`} role="status">
+          <div className="toast-icon-wrapper">
+            {toastData.type === 'wishlist' ? (
+              <Heart className="w-4 h-4 fill-white text-white" />
+            ) : toastData.type === 'cart' ? (
+              <ShoppingCart className="w-4 h-4 text-white" />
+            ) : (
+              <Check className="w-4 h-4 text-white" />
+            )}
           </div>
-          <span className="toast-text">{toastMessage}</span>
-          <Link href="/cart" className="toast-cta">
-            View Cart
-          </Link>
+
+          <div className="toast-body">
+            <span className="toast-text">{toastData.message}</span>
+          </div>
+
+          {toastData.actionHref && (
+            <Link href={toastData.actionHref} className="toast-action-btn">
+              <span>{toastData.actionLabel || 'View'}</span>
+              <ArrowRight size={13} className="shrink-0" />
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setToastData(null)}
+            className="toast-close-btn"
+            aria-label="Close notification"
+          >
+            <X size={14} />
+          </button>
+
+          <div className="toast-progress-bar" />
         </div>
       )}
 
@@ -315,22 +378,34 @@ export default function ShopPage() {
           {
             title: "Buy Sheesha",
             text: "Premium sheesha setups",
-            icon: "/Categories/Buy Sheesha.webp",
+            icon: <ShoppingBag size={22} color="#F1A51D" strokeWidth={2.2} />,
+            badgeBg: "linear-gradient(135deg, #74189B 0%, #4A0E63 100%)",
+            badgeBorder: "rgba(116, 24, 155, 0.25)",
+            badgeShadow: "0 6px 16px rgba(116, 24, 155, 0.25)",
           },
           {
             title: "Flavors",
             text: "Explore rich flavors",
-            icon: "/Categories/flavor.webp",
+            icon: <Flame size={22} color="#E11D48" strokeWidth={2.2} />,
+            badgeBg: "linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%)",
+            badgeBorder: "#FECDD3",
+            badgeShadow: "0 4px 12px rgba(225, 29, 72, 0.12)",
           },
           {
             title: "Sheesha Setups",
             text: "Complete VIP setups",
-            icon: "/Categories/Sheesha Setups.webp",
+            icon: <Sparkles size={22} color="#74189B" strokeWidth={2.2} />,
+            badgeBg: "linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%)",
+            badgeBorder: "#E9D5FF",
+            badgeShadow: "0 4px 12px rgba(116, 24, 155, 0.12)",
           },
           {
             title: "Accessories",
             text: "Essential accessories",
-            icon: "/Categories/Accessories.webp",
+            icon: <ShieldCheck size={22} color="#059669" strokeWidth={2.2} />,
+            badgeBg: "linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)",
+            badgeBorder: "#BBF7D0",
+            badgeShadow: "0 4px 12px rgba(5, 150, 105, 0.12)",
           },
         ].map((item) => {
           const isSelected = category === item.title && !viewOnlyWishlist;
@@ -343,8 +418,15 @@ export default function ShopPage() {
               }}
               className={`category-card ${isSelected ? "selected" : ""}`}
             >
-              <div className="category-icon-wrapper">
-                <img src={item.icon} alt={item.title} className="cat-img" />
+              <div
+                className="category-icon-wrapper"
+                style={{
+                  background: item.badgeBg,
+                  border: `1.5px solid ${item.badgeBorder}`,
+                  boxShadow: item.badgeShadow,
+                }}
+              >
+                {item.icon}
               </div>
               <div className="category-text">
                 <strong>{item.title}</strong>
@@ -584,7 +666,7 @@ export default function ShopPage() {
             ) : (
               <div className="product-grid">
                 {filteredProducts.map((product) => {
-                  const liked = wishlist.includes(product.id);
+                  const liked = wishlist.includes(String(product.id));
                   const isJustAdded = addedAnimationId === product.id;
 
                   return (
@@ -781,19 +863,19 @@ export default function ShopPage() {
 
                   <button
                     className={`modal-wishlist-btn ${
-                      wishlist.includes(quickViewProduct.id) ? "active" : ""
+                      wishlist.includes(String(quickViewProduct.id)) ? "active" : ""
                     }`}
                     onClick={() => toggleWishlist(quickViewProduct.id)}
                   >
                     <Heart
                       size={18}
                       fill={
-                        wishlist.includes(quickViewProduct.id)
+                        wishlist.includes(String(quickViewProduct.id))
                           ? "#e11d48"
                           : "none"
                       }
                       color={
-                        wishlist.includes(quickViewProduct.id)
+                        wishlist.includes(String(quickViewProduct.id))
                           ? "#e11d48"
                           : "currentColor"
                       }
@@ -834,8 +916,7 @@ export default function ShopPage() {
 
         body {
           margin: 0;
-          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
-            Roboto, sans-serif;
+          font-family: 'Montserrat', sans-serif;
           color: #27232a;
           background: #ffffff;
         }
@@ -875,64 +956,181 @@ export default function ShopPage() {
           }
         }
 
-        /* Toast */
-        .toast-notification {
+        /* =======================================================
+           LUXURY FLOATING GLASS CAPSULE TOAST NOTIFICATION
+           ======================================================= */
+        .luxury-toast-notification {
           position: fixed;
           bottom: 28px;
           right: 28px;
-          z-index: 9999;
-          background: #1e1526;
-          color: white;
-          padding: 14px 20px;
-          border-radius: 12px;
-          box-shadow: 0 16px 40px rgba(30, 21, 38, 0.4);
+          z-index: 99999;
+          background: rgba(22, 14, 34, 0.94);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          color: #ffffff;
+          padding: 8px 10px 8px 12px;
+          border-radius: 9999px;
+          border: 1px solid rgba(241, 165, 29, 0.35);
+          box-shadow: 
+            0 24px 60px -12px rgba(116, 24, 155, 0.45),
+            0 12px 30px rgba(0, 0, 0, 0.5),
+            inset 0 1px 1px rgba(255, 255, 255, 0.2);
           display: flex;
           align-items: center;
-          gap: 14px;
-          animation: slideUpToast 0.3s ease-out;
-          border-left: 4px solid #f1a51d;
+          gap: 12px;
+          min-height: 52px;
+          max-width: 90vw;
+          animation: luxuryToastSpring 0.45s cubic-bezier(0.16, 1.25, 0.3, 1) forwards;
+          overflow: hidden;
         }
 
-        @keyframes slideUpToast {
-          from {
-            transform: translateY(20px);
+        @keyframes luxuryToastSpring {
+          0% {
+            transform: translateY(25px) scale(0.92);
             opacity: 0;
           }
-          to {
-            transform: translateY(0);
+          100% {
+            transform: translateY(0) scale(1);
             opacity: 1;
           }
         }
 
-        .toast-icon {
-          width: 26px;
-          height: 26px;
+        .toast-icon-wrapper {
+          width: 36px;
+          height: 36px;
           border-radius: 50%;
-          background: #f1a51d;
-          color: #1e1526;
-          display: grid;
-          place-items: center;
-          font-weight: bold;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          position: relative;
+        }
+
+        .toast-wishlist .toast-icon-wrapper {
+          background: linear-gradient(135deg, #FF6B8B 0%, #E94280 100%);
+          box-shadow: 0 0 18px rgba(233, 66, 128, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .toast-cart .toast-icon-wrapper {
+          background: linear-gradient(135deg, #FFB100 0%, #FF7A00 100%);
+          box-shadow: 0 0 18px rgba(255, 122, 0, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .toast-info .toast-icon-wrapper {
+          background: linear-gradient(135deg, #74189B 0%, #A855F7 100%);
+          box-shadow: 0 0 18px rgba(168, 85, 247, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .toast-body {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          padding-right: 4px;
         }
 
         .toast-text {
           font-size: 13px;
           font-weight: 600;
+          color: #f8fafc;
+          letter-spacing: 0.1px;
+          line-height: 1.4;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 320px;
         }
 
-        .toast-cta {
-          margin-left: 10px;
-          background: #74189b;
-          color: white;
-          padding: 6px 12px;
-          border-radius: 6px;
-          font-size: 11px;
+        .toast-action-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: linear-gradient(135deg, #74189B 0%, #9022BE 100%);
+          color: #ffffff;
+          padding: 8px 16px;
+          border-radius: 9999px;
+          font-size: 11.5px;
           font-weight: 700;
-          transition: 0.2s;
+          letter-spacing: 0.3px;
+          text-decoration: none;
+          white-space: nowrap;
+          border: 1px solid rgba(241, 165, 29, 0.35);
+          box-shadow: 0 4px 14px rgba(116, 24, 155, 0.4);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          flex-shrink: 0;
         }
 
-        .toast-cta:hover {
-          background: #9022be;
+        .toast-action-btn:hover {
+          transform: translateY(-1px) scale(1.03);
+          background: linear-gradient(135deg, #8a20b7 0%, #a433d4 100%);
+          box-shadow: 0 6px 18px rgba(116, 24, 155, 0.55);
+          color: #ffffff;
+        }
+
+        .toast-close-btn {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #cbd5e1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          flex-shrink: 0;
+          margin-left: 2px;
+        }
+
+        .toast-close-btn:hover {
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+          transform: scale(1.08);
+        }
+
+        .toast-progress-bar {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 2.5px;
+          background: linear-gradient(90deg, #FFB100, #E94280, #74189B);
+          animation: toastCountdown 3.8s linear forwards;
+          border-radius: 0 0 9999px 9999px;
+        }
+
+        @keyframes toastCountdown {
+          0% {
+            width: 100%;
+          }
+          100% {
+            width: 0%;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .luxury-toast-notification {
+            bottom: 20px;
+            left: 12px;
+            right: 12px;
+            padding: 8px 8px 8px 10px;
+            gap: 9px;
+            max-width: calc(100vw - 24px);
+          }
+
+          .toast-text {
+            font-size: 12px;
+            max-width: 160px;
+          }
+
+          .toast-action-btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            gap: 4px;
+          }
         }
 
         /* Announcement */
@@ -1229,50 +1427,50 @@ export default function ShopPage() {
         .category-strip {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
-          padding-top: 24px;
-          padding-bottom: 24px;
+          gap: 18px;
+          padding-top: 28px;
+          padding-bottom: 28px;
         }
 
         .category-card {
-          border: 1px solid #eeeaf0;
-          background: white;
-          border-radius: 14px;
-          padding: 16px 18px;
+          border: 1.5px solid #eeeaf0;
+          background: #ffffff;
+          border-radius: 18px;
+          padding: 18px 20px;
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: 16px;
           text-align: left;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          cursor: pointer;
+          transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
         }
 
         .category-card:hover {
           border-color: #74189b;
-          transform: translateY(-2px);
-          box-shadow: 0 10px 24px rgba(116, 24, 155, 0.08);
+          transform: translateY(-3px);
+          box-shadow: 0 12px 28px rgba(116, 24, 155, 0.1);
         }
 
         .category-card.selected {
           border-color: #74189b;
-          background: #fbf7fc;
+          background: #fbf6fd;
           box-shadow: 0 10px 24px rgba(116, 24, 155, 0.12);
         }
 
         .category-icon-wrapper {
-          width: 50px;
-          height: 50px;
+          width: 52px;
+          height: 52px;
           flex-shrink: 0;
-          border-radius: 12px;
-          background: #f7eff9;
-          overflow: hidden;
-          display: grid;
-          place-items: center;
+          border-radius: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.25s ease;
         }
 
-        .cat-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+        .category-card:hover .category-icon-wrapper {
+          transform: scale(1.08);
         }
 
         .category-text {
@@ -1281,25 +1479,29 @@ export default function ShopPage() {
 
         .category-text strong {
           display: block;
-          color: #2b262e;
-          font-size: 13.5px;
-          font-weight: 750;
+          color: #211D24;
+          font-size: 14.5px;
+          font-weight: 800;
+          letter-spacing: -0.2px;
           margin-bottom: 3px;
         }
 
         .category-text small {
           display: block;
-          color: #8b858e;
-          font-size: 11.5px;
+          color: #64748B;
+          font-size: 12px;
+          font-weight: 500;
         }
 
         .cat-arrow {
           color: #74189b;
-          transition: transform 0.2s;
+          opacity: 0.6;
+          transition: all 0.2s;
         }
 
         .category-card:hover .cat-arrow {
-          transform: translateX(3px);
+          opacity: 1;
+          transform: translateX(4px);
         }
 
         /* Shop Topbar */
@@ -1480,6 +1682,7 @@ export default function ShopPage() {
         }
 
         .product-card {
+          position: relative;
           background: white;
           border: 1px solid #ede8ef;
           border-radius: 16px;
@@ -1594,6 +1797,12 @@ export default function ShopPage() {
         }
 
         .rating {
+          position: static;
+          top: auto;
+          left: auto;
+          background: transparent;
+          padding: 0;
+          border-radius: 0;
           display: flex;
           align-items: center;
           gap: 4px;

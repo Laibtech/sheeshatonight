@@ -13,7 +13,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
-import { clearSessionCookie } from '@/lib/session';
+import { clearSessionCookie, clearAllClientAuth } from '@/lib/session';
 
 interface TopbarProps {
   onToggleSidebar: () => void;
@@ -43,14 +43,9 @@ export const Topbar: React.FC<TopbarProps> = ({
   }, []);
 
   const handleSignOut = () => {
-    logout();
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
-      document.cookie = 'auth_token=; path=/; max-age=0;';
-      document.cookie = 'user_role=; path=/; max-age=0;';
-      clearSessionCookie();
-      window.location.href = '/auth/login';
-    }
+    if (logout) logout();
+    clearAllClientAuth();
+    window.location.href = '/auth/login';
   };
 
   const displayName = userName || 'Admin';
@@ -101,6 +96,16 @@ export const Topbar: React.FC<TopbarProps> = ({
           {unreadNotificationsCount > 0 && (
             <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white animate-pulse" />
           )}
+        </button>
+
+        {/* Quick Logout button */}
+        <button
+          onClick={handleSignOut}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200/80 rounded-xl transition cursor-pointer"
+          title="Logout from admin dashboard"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Logout</span>
         </button>
 
         {/* Profile Pill & Dropdown */}
@@ -159,10 +164,10 @@ export const Topbar: React.FC<TopbarProps> = ({
 
               <button
                 onClick={handleSignOut}
-                className="w-full px-4 py-2 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition"
+                className="w-full px-4 py-2 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
+                <span>Logout</span>
               </button>
             </div>
           )}

@@ -269,14 +269,7 @@ export default function ExperiencesPage() {
           margin: 0;
           color: #29232d;
           background: #ffffff;
-          font-family:
-            Inter,
-            ui-sans-serif,
-            system-ui,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            sans-serif;
+          font-family: 'Montserrat', sans-serif;
         }
 
         .container {

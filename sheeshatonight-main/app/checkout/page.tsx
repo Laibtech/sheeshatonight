@@ -88,6 +88,47 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
+  // Prefill rental booking notes and details if rental packages are in cart
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const keys = Object.keys(localStorage).filter((k) => k.startsWith('rental_booking_'));
+        if (keys.length > 0) {
+          const raw = localStorage.getItem(keys[0]!);
+          if (raw) {
+            const data = JSON.parse(raw);
+            const notesParts: string[] = [];
+            if (data.rentalName) notesParts.push(`Rental Setup: ${data.rentalName}`);
+            if (data.date) notesParts.push(`Date: ${data.date}`);
+            if (data.time) notesParts.push(`Time: ${data.time}`);
+            if (data.duration) notesParts.push(`Duration: ${data.duration}`);
+            if (data.guests) notesParts.push(`Guests: ${data.guests}`);
+            if (Array.isArray(data.flavors) && data.flavors.length > 0) {
+              notesParts.push(`Flavors: ${data.flavors.join(', ')}`);
+            }
+            if (notesParts.length > 0) {
+              setNotes((prev) => (prev ? prev : notesParts.join(' | ')));
+            }
+            if (data.deliveryAddress || data.customerPhone || data.customerName) {
+              setShippingAddress((prev) => {
+                const nameParts = data.customerName ? data.customerName.trim().split(' ') : [];
+                return {
+                  ...prev,
+                  street: prev.street || data.deliveryAddress || '',
+                  phone: prev.phone || data.customerPhone || '',
+                  firstName: prev.firstName || (nameParts[0] || ''),
+                  lastName: prev.lastName || (nameParts.slice(1).join(' ') || ''),
+                };
+              });
+            }
+          }
+        }
+      } catch {
+        // Ignore
+      }
+    }
+  }, []);
+
   const handleShippingChange = (field: keyof ShippingAddress, value: string) => {
     setShippingAddress((prev) => ({ ...prev, [field]: value }));
   };

@@ -9,7 +9,7 @@ export default function CustomerDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute allowedRoles={['CUSTOMER', 'ADMIN']}>
+    <ProtectedRoute allowedRoles={['CUSTOMER']}>
       <CustomerPortalLayout>
         {children}
       </CustomerPortalLayout>

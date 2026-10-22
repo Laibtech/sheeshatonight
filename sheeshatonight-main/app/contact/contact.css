@@ -25,7 +25,7 @@
   min-height: 100vh;
   background: var(--white);
   color: var(--text);
-  font-family: "Inter", "Poppins", Arial, sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .contact-page a {
@@ -52,11 +52,11 @@ textarea {
   justify-content: center;
   background: linear-gradient(
     115deg,
-    #fff 0%,
-    #fff9fd 55%,
-    #fffdf7 100%
+    #0d0712 0%,
+    #14091c 55%,
+    #1c0c24 100%
   );
-  border-bottom: 1px solid #f2edf3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Hero Banner Image */

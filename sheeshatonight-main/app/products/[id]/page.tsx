@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthContext } from "@/components/AuthProvider";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
@@ -63,14 +64,15 @@ export default function ProductPage() {
   const router = useRouter();
   const { user } = useAuthContext();
   const { addToCart } = useCart();
-  const productId = params.id as string;
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const productId = (params?.id as string) || '';
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const isFavorite = isInWishlist(productId);
   const [addingToCart, setAddingToCart] = useState(false);
 
   useEffect(() => {
@@ -236,7 +238,17 @@ export default function ProductPage() {
                   <div className="image-actions">
                     <button
                       className="icon-circle-btn"
-                      onClick={() => setIsFavorite(!isFavorite)}
+                      onClick={() =>
+                        toggleWishlist(productId, {
+                          title: product?.title || product?.name,
+                          name: product?.name || product?.title,
+                          price: product?.price,
+                          images: productImages,
+                          image: productImages[0],
+                          vendor: product?.brand || product?.vendor,
+                          category: product?.category,
+                        })
+                      }
                       aria-label="Wishlist product"
                     >
                       <Heart size={18} fill={isFavorite ? "#e63946" : "none"} color={isFavorite ? "#e63946" : "#334155"} />

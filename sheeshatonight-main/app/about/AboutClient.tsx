@@ -2,15 +2,132 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Check } from "lucide-react";
+import {
+  Check,
+  ShoppingBag,
+  Flame,
+  Sparkles,
+  ShieldCheck,
+  ArrowRight,
+} from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+const servicesData = [
+  {
+    number: "01",
+    title: "Premium Sheesha",
+    text: "Discover quality sheesha products, flavours, setups and accessories from trusted sellers.",
+    image: "/Categories/Buy%20Sheesha.webp",
+    cta: "Shop Now",
+    href: "/shop",
+    icon: <ShoppingBag size={18} strokeWidth={2.2} />,
+  },
+  {
+    number: "02",
+    title: "Sheesha Rentals",
+    text: "Curated rental packages designed for villas, yachts, celebrations and private gatherings.",
+    image: "/Categories/Rentals.webp",
+    cta: "View Rentals",
+    href: "/rentals",
+    icon: <Flame size={18} strokeWidth={2.2} />,
+  },
+  {
+    number: "03",
+    title: "Luxury Experiences",
+    text: "Create memorable moments with premium sheesha experiences across the UAE.",
+    image: "/images/about-experience.jpg",
+    cta: "Explore Experiences",
+    href: "/experiences",
+    icon: <Sparkles size={18} strokeWidth={2.2} />,
+  },
+  {
+    number: "04",
+    title: "Verified Vendors",
+    text: "Connect with trusted sheesha specialists and experienced event vendors.",
+    image: "/Categories/Top%20Vendors.webp",
+    cta: "Find Vendors",
+    href: "/vendors",
+    icon: <ShieldCheck size={18} strokeWidth={2.2} />,
+  },
+];
+
+interface StoryContent {
+  title: string;
+  intro: string;
+  sections: { heading: string; text: string }[];
+}
+
+function parseStoryContent(raw: string | null): StoryContent {
+  const defaultStory: StoryContent = {
+    title: "Elevating the Sheesha Experience",
+    intro:
+      "SheeshaTonight is the United Arab Emirates' premier luxury sheesha rental, catalog, and event concierge service. Founded with a passion for traditional hospitality merged with contemporary excellence, we curate the finest European and Russian sheesha apparatus, artisanal tobacco blends, and white-glove setup services for discerning clients.",
+    sections: [
+      {
+        heading: "Our Mission",
+        text: "To deliver unforgettable, bespoke lounge experiences directly to private villas, luxury yachts, corporate retreats, and celebratory gatherings across Dubai, Abu Dhabi, and the wider UAE.",
+      },
+      {
+        heading: "Quality & Authenticity Guaranteed",
+        text: "Every setup includes medical-grade silicone hoses, precision-crafted stainless steel or Bohemian crystal stems, natural coconut charcoal, and masterfully prepared flavors by certified shisha sommeliers.",
+      },
+    ],
+  };
+
+  if (!raw || !raw.trim()) {
+    return defaultStory;
+  }
+
+  const clean = raw.trim();
+  const lines = clean.split("\n").map((l) => l.trim()).filter(Boolean);
+
+  let title = "";
+  let intro = "";
+  const sections: { heading: string; text: string }[] = [];
+  let currentSection: { heading: string; text: string } | null = null;
+
+  for (const line of lines) {
+    if (line.startsWith("## ")) {
+      title = line.replace(/^##\s*/, "").trim();
+    } else if (line.startsWith("### ")) {
+      if (currentSection) {
+        sections.push(currentSection);
+      }
+      currentSection = {
+        heading: line.replace(/^###\s*/, "").trim(),
+        text: "",
+      };
+    } else {
+      const cleanLine = line.replace(/^\*\*|\*\*$/g, "").trim();
+      if (currentSection) {
+        currentSection.text = currentSection.text
+          ? `${currentSection.text} ${cleanLine}`
+          : cleanLine;
+      } else {
+        intro = intro ? `${intro} ${cleanLine}` : cleanLine;
+      }
+    }
+  }
+
+  if (currentSection) {
+    sections.push(currentSection);
+  }
+
+  return {
+    title: title || defaultStory.title,
+    intro: intro || defaultStory.intro,
+    sections: sections.length > 0 ? sections : defaultStory.sections,
+  };
+}
 
 export default function AboutClient({
   cmsContent,
 }: {
   cmsContent: string | null;
 }) {
+  const story = parseStoryContent(cmsContent);
+
   return (
     <>
       <Header />
@@ -42,54 +159,41 @@ export default function AboutClient({
           </div>
         </section>
 
-        {/* INTRO */}
+        {/* OUR STORY */}
         <section className="intro-section">
           <div className="container intro-grid">
             <div className="intro-image">
               <Image
                 src="/images/about-story.jpg"
-                alt="Premium sheesha experience"
+                alt="Dubai skyline - Elevating the Sheesha Experience"
                 fill
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="(max-width: 960px) 100vw, 50vw"
                 unoptimized
+                priority
               />
             </div>
 
             <div className="intro-content">
-              <span className="eyebrow purple">OUR STORY</span>
+              <span className="story-pill">OUR STORY</span>
 
-              {cmsContent ? (
-                <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-[15px] space-y-4">
-                  {cmsContent}
-                </div>
-              ) : (
-                <>
-                  <h2>
-                    More than sheesha.
-                    <br />
-                    It&apos;s an experience.
-                  </h2>
+              <h2 className="story-heading">
+                {story.title}
+              </h2>
 
-                  <p>
-                    SheeshaTonight was created to make premium sheesha
-                    experiences easier to discover, book and enjoy.
-                  </p>
+              <p className="story-lead">
+                {story.intro}
+              </p>
 
-                  <p>
-                    From intimate villa gatherings to yacht celebrations,
-                    corporate events and relaxed evenings at home, we bring
-                    together quality products, curated rentals and trusted
-                    vendors in one premium marketplace.
-                  </p>
+              <div className="story-sections">
+                {story.sections.map((section, idx) => (
+                  <div key={idx} className="story-block">
+                    <h3 className="story-subheading">{section.heading}</h3>
+                    <p className="story-text">{section.text}</p>
+                  </div>
+                ))}
+              </div>
 
-                  <p>
-                    Our goal is simple: make every sheesha experience feel
-                    effortless, elevated and memorable.
-                  </p>
-                </>
-              )}
-
-              <Link href="/experiences" className="primary-btn">
+              <Link href="/experiences" className="primary-btn story-btn">
                 Explore Experiences
                 <Arrow />
               </Link>
@@ -101,44 +205,20 @@ export default function AboutClient({
         <section className="what-section">
           <div className="container">
             <div className="section-heading centered">
-              <span className="eyebrow purple">WHAT WE DO</span>
+              <span className="what-pill">WHAT WE DO</span>
 
-              <h2>Everything for your next experience</h2>
+              <h2 className="what-heading">Everything for your next experience</h2>
 
-              <p>
+              <p className="what-subheading">
                 One destination for premium sheesha products, rentals,
                 experiences and trusted UAE vendors.
               </p>
             </div>
 
             <div className="service-grid">
-              <ServiceCard
-                number="01"
-                title="Premium Sheesha"
-                text="Discover quality sheesha products, flavours, setups and accessories from trusted sellers."
-                href="/shop"
-              />
-
-              <ServiceCard
-                number="02"
-                title="Sheesha Rentals"
-                text="Curated rental packages designed for villas, yachts, celebrations and private gatherings."
-                href="/rentals"
-              />
-
-              <ServiceCard
-                number="03"
-                title="Luxury Experiences"
-                text="Create memorable moments with premium sheesha experiences across the UAE."
-                href="/experiences"
-              />
-
-              <ServiceCard
-                number="04"
-                title="Verified Vendors"
-                text="Connect with trusted sheesha specialists and experienced event vendors."
-                href="/vendors"
-              />
+              {servicesData.map((service, idx) => (
+                <ServiceCard key={idx} {...service} />
+              ))}
             </div>
           </div>
         </section>
@@ -303,9 +383,7 @@ export default function AboutClient({
           margin: 0;
           background: #fff;
           color: #211c23;
-          font-family:
-            Inter, ui-sans-serif, system-ui, -apple-system,
-            BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-family: 'Montserrat', sans-serif;
         }
 
         .about-page {
@@ -397,33 +475,123 @@ export default function AboutClient({
           color: rgba(255, 255, 255, 0.84);
         }
 
-        /* INTRO */
+        /* INTRO / OUR STORY */
 
         .intro-section {
-          padding: 56px 0;
+          padding: 80px 0;
+          background: #ffffff;
         }
 
         .intro-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           align-items: center;
-          gap: 90px;
+          gap: 72px;
         }
 
         .intro-image {
           position: relative;
-          min-height: 600px;
+          min-height: 560px;
+          height: 100%;
           overflow: hidden;
-          border-radius: 22px;
-          background: #f3eef5;
+          border-radius: 24px;
+          background: #f4eef7;
+          box-shadow: 0 24px 50px -15px rgba(116, 24, 155, 0.12);
+          border: 1px solid rgba(116, 24, 155, 0.08);
         }
 
-        .intro-image img,
-        .uae-image img {
+        .intro-image img {
           object-fit: cover;
+          transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .intro-content h2,
+        .intro-image:hover img {
+          transform: scale(1.025);
+        }
+
+        .story-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 15px;
+          border-radius: 9999px;
+          border: 1px solid rgba(116, 24, 155, 0.28);
+          background: rgba(116, 24, 155, 0.04);
+          color: #74189b;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          margin-bottom: 18px;
+          width: fit-content;
+        }
+
+        .story-heading {
+          margin: 0 0 18px;
+          font-size: clamp(30px, 3.2vw, 44px);
+          line-height: 1.15;
+          letter-spacing: -0.035em;
+          font-weight: 800;
+          color: #1f1427;
+        }
+
+        .story-lead {
+          margin: 0 0 26px;
+          color: #5c5562;
+          font-size: 15.5px;
+          line-height: 1.78;
+          font-weight: 450;
+        }
+
+        .story-sections {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+
+        .story-block {
+          position: relative;
+          padding-left: 18px;
+          border-left: 2.5px solid rgba(116, 24, 155, 0.28);
+          transition: border-color 0.2s ease;
+        }
+
+        .story-block:hover {
+          border-left-color: #74189b;
+        }
+
+        .story-subheading {
+          margin: 0 0 6px;
+          font-size: 17.5px;
+          font-weight: 750;
+          line-height: 1.35;
+          color: #261633;
+          letter-spacing: -0.015em;
+        }
+
+        .story-text {
+          margin: 0;
+          color: #635b69;
+          font-size: 14.5px;
+          line-height: 1.7;
+          font-weight: 400;
+        }
+
+        .story-btn {
+          margin-top: 4px;
+          background: #74189b;
+          color: #ffffff;
+          box-shadow: 0 8px 24px -6px rgba(116, 24, 155, 0.35);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .story-btn:hover {
+          background: #621184;
+          transform: translateY(-2px);
+          box-shadow: 0 12px 28px -6px rgba(116, 24, 155, 0.45);
+        }
+
         .values-title h2,
         .uae-content h2 {
           margin: 0;
@@ -432,19 +600,14 @@ export default function AboutClient({
           letter-spacing: -0.04em;
         }
 
-        .intro-content p,
+        .uae-image img {
+          object-fit: cover;
+        }
+
         .uae-content p {
           color: #706a73;
           font-size: 15px;
           line-height: 1.8;
-        }
-
-        .intro-content p:first-of-type {
-          margin-top: 25px;
-        }
-
-        .intro-content p:not(:first-of-type) {
-          margin-top: 15px;
         }
 
         .primary-btn,
@@ -469,16 +632,18 @@ export default function AboutClient({
           color: #fff;
         }
 
-        /* SERVICES */
+        /* SERVICES - WHAT WE DO */
 
         .what-section {
-          padding: 56px 0;
+          padding: 88px 0;
           background: #faf8fb;
+          border-top: 1px solid rgba(116, 24, 155, 0.05);
+          border-bottom: 1px solid rgba(116, 24, 155, 0.05);
         }
 
         .section-heading {
           max-width: 680px;
-          margin-bottom: 55px;
+          margin-bottom: 56px;
         }
 
         .section-heading.centered {
@@ -487,72 +652,181 @@ export default function AboutClient({
           text-align: center;
         }
 
-        .section-heading h2 {
-          margin: 0;
-          font-size: clamp(34px, 4vw, 48px);
-          letter-spacing: -0.04em;
-          line-height: 1.08;
+        .what-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 15px;
+          border-radius: 9999px;
+          border: 1px solid rgba(116, 24, 155, 0.28);
+          background: rgba(116, 24, 155, 0.05);
+          color: #74189b;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          margin-bottom: 18px;
         }
 
-        .section-heading p {
+        .what-heading {
+          margin: 0;
+          font-family: 'Montserrat', sans-serif;
+          font-size: clamp(32px, 3.8vw, 44px);
+          letter-spacing: -0.035em;
+          line-height: 1.15;
+          font-weight: 800;
+          color: #1f1427;
+        }
+
+        .what-subheading {
           margin: 16px auto 0;
-          max-width: 570px;
-          color: #746d77;
+          max-width: 580px;
+          color: #635b68;
           line-height: 1.7;
-          font-size: 15px;
+          font-size: 15.5px;
+          font-weight: 400;
         }
 
         .service-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 18px;
+          gap: 24px;
         }
 
         .service-card {
-          min-height: 315px;
-          padding: 30px;
           display: flex;
           flex-direction: column;
-          border: 1px solid #e9e3eb;
-          border-radius: 18px;
-          background: #fff;
-          transition:
-            transform 0.25s ease,
-            box-shadow 0.25s ease;
+          height: 100%;
+          border: 1px solid #ede7ef;
+          border-radius: 20px;
+          background: #ffffff;
+          overflow: hidden;
+          transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                      box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                      border-color 0.28s ease;
           text-decoration: none;
           color: inherit;
+          box-shadow: 0 4px 20px rgba(45, 15, 60, 0.03);
         }
 
         .service-card:hover {
           transform: translateY(-5px);
-          box-shadow: 0 20px 45px rgba(46, 17, 54, 0.08);
+          box-shadow: 0 18px 42px -10px rgba(45, 15, 60, 0.10);
+          border-color: #d6c6dc;
         }
 
-        .service-number {
-          color: #74189b;
-          font-size: 12px;
-          font-weight: 800;
+        .service-card-media {
+          position: relative;
+          width: 100%;
+          height: 195px;
+          overflow: hidden;
+          background: #f4ecf7;
         }
 
-        .service-card h3 {
-          margin: auto 0 12px;
-          font-size: 22px;
-          letter-spacing: -0.025em;
-          color: #211c23;
+        .service-card-img {
+          object-fit: cover;
+          transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .service-card p {
-          margin: 0;
-          color: #77717a;
-          font-size: 13px;
-          line-height: 1.7;
+        .service-card:hover .service-card-img {
+          transform: scale(1.05);
         }
 
-        .service-arrow {
-          margin-top: 24px;
-          color: #74189b;
+        .service-number-badge {
+          position: absolute;
+          top: 13px;
+          left: 13px;
+          z-index: 2;
           display: inline-flex;
           align-items: center;
+          padding: 4px 10px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.94);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(116, 24, 155, 0.16);
+          color: #74189b;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .service-card-body {
+          padding: 22px 22px 24px;
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+        }
+
+        .service-icon-box {
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, rgba(116, 24, 155, 0.08) 0%, rgba(241, 165, 29, 0.14) 100%);
+          border: 1px solid rgba(116, 24, 155, 0.16);
+          color: #74189b;
+          margin-bottom: 16px;
+          transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease;
+        }
+
+        .service-card:hover .service-icon-box {
+          transform: scale(1.06);
+          background: linear-gradient(135deg, #74189b 0%, #9024bd 100%);
+          color: #F1A51D;
+          border-color: #74189b;
+        }
+
+        .service-card-title {
+          margin: 0 0 10px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 19px;
+          font-weight: 750;
+          color: #1f1427;
+          line-height: 1.3;
+          letter-spacing: -0.02em;
+          transition: color 0.2s ease;
+        }
+
+        .service-card:hover .service-card-title {
+          color: #74189b;
+        }
+
+        .service-card-text {
+          margin: 0 0 22px;
+          color: #6a626e;
+          font-size: 13.5px;
+          line-height: 1.68;
+          font-weight: 400;
+          flex: 1;
+        }
+
+        .service-card-cta {
+          margin-top: auto;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          color: #74189b;
+          font-size: 13px;
+          font-weight: 750;
+          letter-spacing: 0.015em;
+          transition: color 0.2s ease;
+        }
+
+        .service-cta-arrow {
+          color: #74189b;
+          transition: transform 0.25s ease, color 0.25s ease;
+        }
+
+        .service-card:hover .service-card-cta {
+          color: #571275;
+        }
+
+        .service-card:hover .service-cta-arrow {
+          transform: translateX(5px);
+          color: #F1A51D;
         }
 
         /* EXPERIENCE */
@@ -764,10 +1038,38 @@ export default function AboutClient({
             grid-template-columns: repeat(2, 1fr);
           }
 
-          .intro-grid,
+          .intro-grid {
+            gap: 48px;
+          }
+
           .values-grid,
           .uae-grid {
             gap: 55px;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .intro-section {
+            padding: 56px 0;
+          }
+
+          .intro-grid {
+            grid-template-columns: 1fr;
+            gap: 36px;
+          }
+
+          .intro-image {
+            min-height: 360px;
+            max-height: 440px;
+            border-radius: 20px;
+          }
+
+          .story-heading {
+            font-size: 30px;
+          }
+
+          .story-lead {
+            font-size: 15px;
           }
         }
 
@@ -803,7 +1105,6 @@ export default function AboutClient({
             padding: 70px 0;
           }
 
-          .intro-grid,
           .values-grid,
           .uae-grid {
             grid-template-columns: 1fr;
@@ -811,19 +1112,40 @@ export default function AboutClient({
           }
 
           .intro-image {
-            min-height: 430px;
+            min-height: 320px;
           }
 
           .uae-image {
             min-height: 390px;
           }
 
+          .what-section {
+            padding: 56px 0;
+          }
+
+          .section-heading {
+            margin-bottom: 36px;
+          }
+
+          .what-heading {
+            font-size: 28px;
+          }
+
+          .what-subheading {
+            font-size: 14.5px;
+          }
+
           .service-grid {
             grid-template-columns: 1fr;
+            gap: 20px;
           }
 
           .service-card {
-            min-height: 270px;
+            min-height: auto;
+          }
+
+          .service-card-media {
+            height: 180px;
           }
 
           .experience-section {
@@ -857,23 +1179,46 @@ function ServiceCard({
   title,
   text,
   href,
+  image,
+  cta,
+  icon,
 }: {
   number: string;
   title: string;
   text: string;
   href: string;
+  image: string;
+  cta: string;
+  icon: React.ReactNode;
 }) {
   return (
-    <Link href={href} className="service-card">
-      <span className="service-number">{number}</span>
+    <Link href={href} className="service-card group">
+      <div className="service-card-media">
+        <Image
+          src={image}
+          alt={title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          className="service-card-img"
+          unoptimized
+        />
+        <span className="service-number-badge">{number}</span>
+      </div>
 
-      <h3>{title}</h3>
+      <div className="service-card-body">
+        <div className="service-icon-box">
+          {icon}
+        </div>
 
-      <p>{text}</p>
+        <h3 className="service-card-title">{title}</h3>
 
-      <span className="service-arrow">
-        <Arrow />
-      </span>
+        <p className="service-card-text">{text}</p>
+
+        <div className="service-card-cta">
+          <span>{cta}</span>
+          <ArrowRight size={15} className="service-cta-arrow" />
+        </div>
+      </div>
     </Link>
   );
 }

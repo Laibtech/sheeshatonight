@@ -11,6 +11,7 @@ import { AuthHydration } from '@/components/AuthHydration';
 import { LayoutWrapper } from '@/components/LayoutWrapper';
 import { AuthProvider } from '@/components/AuthProvider';
 import { CartProvider } from '@/contexts/CartContext';
+import { WishlistProvider } from '@/contexts/WishlistContext';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
 import VerticalMarquee from '@/components/VerticalMarquee';
 import AgeVerification from '@/components/AgeVerification';
@@ -237,13 +238,15 @@ export default async function RootLayout({
       <body suppressHydrationWarning className="bg-slate-50 text-slate-900 antialiased min-h-screen">
         <AuthProvider>
           <CartProvider>
-            <AuthHydration />
-            <LayoutWrapper>{children}</LayoutWrapper>
-            <WhatsAppFloat />
-            <VerticalMarquee />
-            <AgeVerification />
-            <MobileBottomNav />
-            <PWARegistration />
+            <WishlistProvider>
+              <AuthHydration />
+              <LayoutWrapper>{children}</LayoutWrapper>
+              <WhatsAppFloat />
+              <VerticalMarquee />
+              <AgeVerification />
+              <MobileBottomNav />
+              <PWARegistration />
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </body>

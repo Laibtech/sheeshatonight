@@ -2,13 +2,21 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Package, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 import { ConfirmModal } from '@/components/admin/ConfirmModal';
 
-export default function AdminEditProductPage({ params }: { params: { id: string } }) {
+export default function AdminEditProductPage({
+  params,
+}: {
+  params?: Promise<{ id: string }> | { id: string };
+}) {
   const router = useRouter();
+  const routeParams = useParams();
+  const unwrapped = params ? ('then' in params ? React.use(params) : params) : null;
+  const productId = (routeParams?.id as string) || unwrapped?.id || '';
+
   const { addToast } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -32,14 +40,14 @@ export default function AdminEditProductPage({ params }: { params: { id: string 
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!productId) return;
       try {
         setLoading(true);
         const token = localStorage.getItem('auth_token');
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-
         const [productRes, vendorsRes] = await Promise.all([
-          fetch(`/api/admin/products/${params.id}`, { headers }),
+          fetch(`/api/admin/products/${productId}`, { headers }),
           fetch('/api/admin/vendors?pageSize=50', { headers }),
         ]);
 
@@ -81,10 +89,11 @@ export default function AdminEditProductPage({ params }: { params: { id: string 
     };
 
     fetchData();
-  }, [params.id]);
+  }, [productId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!productId) return;
 
     try {
       setSaving(true);
@@ -104,7 +113,7 @@ export default function AdminEditProductPage({ params }: { params: { id: string 
         isFeatured: formData.isFeatured,
       };
 
-      const res = await fetch(`/api/admin/products/${params.id}`, {
+      const res = await fetch(`/api/admin/products/${productId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -136,9 +145,10 @@ export default function AdminEditProductPage({ params }: { params: { id: string 
   };
 
   const handleDelete = async () => {
+    if (!productId) return;
     try {
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`/api/admin/products/${params.id}`, {
+      const res = await fetch(`/api/admin/products/${productId}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

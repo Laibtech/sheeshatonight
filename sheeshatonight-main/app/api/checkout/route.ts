@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth, AuthenticatedRequest } from '@/lib/middleware';
 import { notifyVendorNewOrder } from '@/lib/notifications';
-import { sendOrderConfirmationEmail } from '@/lib/email';
+import { sendOrderConfirmationEmail, sendAdminNewOrderEmail } from '@/lib/email';
 import type { Cart, Product, Vendor } from '@prisma/client';
 
 type CartWithProductAndVendor = Cart & {
@@ -261,6 +261,21 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
           }
         } catch (emailErr) {
           console.error(`Order confirmation email error for order ${order.id}:`, emailErr);
+        }
+
+        // Dispatch alert notification to configured admin email
+        try {
+          await sendAdminNewOrderEmail({
+            orderNumber: order.orderNumber,
+            customerName: user.name || 'Valued Customer',
+            customerEmail: user.email || 'customer@sheeshatonight.com',
+            totalAmount: order.totalAmount.toString(),
+            currency: order.currency,
+            vendorName: vendor.name,
+            itemsCount: items.length,
+          });
+        } catch (adminEmailErr) {
+          console.error(`Admin order notification email error for order ${order.id}:`, adminEmailErr);
         }
       }
 

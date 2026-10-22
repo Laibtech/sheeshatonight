@@ -471,7 +471,7 @@ export default async function HomePage() {
                   {step.text}
                 </p>
               </div>
-            ))}
+            ))} 
           </div>
         </div>
       </section>
