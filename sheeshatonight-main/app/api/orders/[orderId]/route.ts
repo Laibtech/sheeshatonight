@@ -69,12 +69,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ orde
       return errorResponse('Order not found', 404);
     }
 
-    // Check authorization - user owns order or is vendor or admin
-    if (order.userId !== userId && user.role === 'CUSTOMER') {
-      return errorResponse('Access denied', 403);
-    }
-    if (user.role === 'VENDOR' && order.vendorId !== user.vendor?.id) {
-      return errorResponse('Access denied', 403);
+    // Check authorization - strict whitelist: admin, owner, or assigned vendor
+    const isAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
+    const isOwner = order.userId === userId;
+    const isAssignedVendor = user.role === 'VENDOR' && !!user.vendor?.id && order.vendorId === user.vendor.id;
+
+    if (!isAdmin && !isOwner && !isAssignedVendor) {
+      return errorResponse('Access denied: you do not have permission to view this order', 403);
     }
 
     return successResponse(order, 'Order retrieved successfully');
@@ -125,12 +126,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
       return errorResponse('Order not found', 404);
     }
 
-    // Only vendor of this order or admin can update
-    if (user.role === 'VENDOR' && order.vendorId !== user.vendor?.id) {
-      return errorResponse('Access denied', 403);
-    }
-    if (user.role === 'CUSTOMER') {
-      return errorResponse('Access denied', 403);
+    // Strict authorization: Only the assigned vendor of this order or admin can perform actions
+    const isAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
+    const isAssignedVendor = user.role === 'VENDOR' && !!user.vendor?.id && order.vendorId === user.vendor.id;
+
+    if (!isAdmin && !isAssignedVendor) {
+      return errorResponse('Access denied: only the assigned vendor or administrator can update this order', 403);
     }
 
     const { action } = validation.data;

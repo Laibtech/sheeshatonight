@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, extractToken } from './jwt';
+import { prisma } from './prisma';
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
@@ -27,7 +28,7 @@ export function getTokenFromRequest(req: NextRequest): string | null {
 }
 
 /**
- * Middleware to check authentication
+ * Middleware to check authentication with real-time server-side database status and role verification
  */
 export function withAuth(handler: (req: AuthenticatedRequest, ...args: any[]) => Promise<NextResponse>) {
   return async (req: AuthenticatedRequest, ...args: any[]) => {
@@ -45,14 +46,54 @@ export function withAuth(handler: (req: AuthenticatedRequest, ...args: any[]) =>
       }
 
       const decoded = verifyToken(token);
-      if (!decoded) {
+      if (!decoded || !decoded.userId) {
         return NextResponse.json(
           { error: 'Unauthorized: Invalid token' },
           { status: 401 }
         );
       }
 
-      req.user = decoded;
+      // Query database to ensure account is active and role is fresh
+      let dbUser = null;
+      try {
+        dbUser = await prisma.user.findUnique({
+          where: { id: decoded.userId },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            status: true,
+            vendor: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        });
+      } catch (dbErr) {
+        // Fallback to decoded payload if DB is temporarily unreachable
+      }
+
+      if (dbUser) {
+        if (dbUser.status !== 'ACTIVE') {
+          return NextResponse.json(
+            { error: 'Forbidden: Account is deactivated or suspended' },
+            { status: 403 }
+          );
+        }
+        req.user = {
+          userId: dbUser.id,
+          email: dbUser.email,
+          role: dbUser.role,
+          vendorId: dbUser.vendor?.id,
+          vendor: dbUser.vendor || undefined,
+        };
+      } else {
+        req.user = decoded;
+      }
+
       return handler(req, ...args);
     } catch (error) {
       return NextResponse.json(
@@ -68,7 +109,7 @@ export function withAuth(handler: (req: AuthenticatedRequest, ...args: any[]) =>
  */
 export function withAdmin(handler: (req: AuthenticatedRequest, ...args: any[]) => Promise<NextResponse>) {
   return withAuth(async (req: AuthenticatedRequest, ...args: any[]) => {
-    if (req.user?.role !== 'ADMIN') {
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
         { error: 'Forbidden: Admin role required' },
         { status: 403 }
@@ -98,7 +139,7 @@ export function withAdminOrStaff(handler: (req: AuthenticatedRequest, ...args: a
  */
 export function withVendor(handler: (req: AuthenticatedRequest, ...args: any[]) => Promise<NextResponse>) {
   return withAuth(async (req: AuthenticatedRequest, ...args: any[]) => {
-    if (req.user?.role !== 'VENDOR' && req.user?.role !== 'ADMIN') {
+    if (req.user?.role !== 'VENDOR' && req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
         { error: 'Forbidden: Vendor role required' },
         { status: 403 }

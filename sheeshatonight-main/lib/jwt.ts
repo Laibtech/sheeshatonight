@@ -47,6 +47,60 @@ export function verifyToken(token: string): JWTPayload | null {
 }
 
 /**
+ * Edge Runtime compatible JWT verification using Web Crypto API (SubtleCrypto)
+ * Fully compliant with Next.js Edge Middleware and zero Node.js crypto dependencies
+ */
+export async function verifyTokenEdge(token: string): Promise<JWTPayload | null> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return null;
+    const headerB64: string = parts[0];
+    const payloadB64: string = parts[1];
+    const signatureB64: string = parts[2];
+
+    // Decode base64url signature
+    let base64 = signatureB64.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) base64 += '=';
+    const signatureBytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+    // Data to verify
+    const dataBytes = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+    const secret = getJwtSecret();
+    const keyBytes = new TextEncoder().encode(secret);
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyBytes,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    const isValid = await crypto.subtle.verify('HMAC', cryptoKey, signatureBytes, dataBytes);
+    if (!isValid) return null;
+
+    // Decode payload
+    let payloadBase64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+    while (payloadBase64.length % 4) payloadBase64 += '=';
+    const jsonStr = decodeURIComponent(
+      Array.prototype.map
+        .call(atob(payloadBase64), (c: string) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonStr) as JWTPayload & { exp?: number };
+
+    // Check expiration
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Extract token from Authorization header
  */
 export function extractToken(authHeader: string | undefined): string | null {

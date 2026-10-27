@@ -33,7 +33,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.384.0",
     "minimatch": "^10.2.6",
-    "next": "^16.4.0",
+    "next": "16.4.2",
     "prisma": "^5.8.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

@@ -1,9 +1,9 @@
 import bcryptjs from 'bcryptjs';
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
 
 /**
- * Hash password using bcryptjs
+ * Hash password using bcryptjs with 12 salt rounds
  */
 export async function hashPassword(password: string): Promise<string> {
   try {
@@ -20,6 +20,7 @@ export async function hashPassword(password: string): Promise<string> {
  */
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
   try {
+    if (!password || !hash) return false;
     return await bcryptjs.compare(password, hash);
   } catch (error) {
     return false;
@@ -35,11 +36,17 @@ export function validateEmail(email: string): boolean {
 }
 
 /**
- * Validate password strength
+ * Validate password strength (OWASP aligned)
  */
 export function validatePassword(password: string): { valid: boolean; message: string } {
+  if (!password || typeof password !== 'string') {
+    return { valid: false, message: 'Password is required' };
+  }
   if (password.length < 8) {
     return { valid: false, message: 'Password must be at least 8 characters' };
+  }
+  if (password.length > 72) {
+    return { valid: false, message: 'Password must not exceed 72 characters' };
   }
   if (!/[A-Z]/.test(password)) {
     return { valid: false, message: 'Password must contain at least one uppercase letter' };
@@ -49,6 +56,9 @@ export function validatePassword(password: string): { valid: boolean; message: s
   }
   if (!/[0-9]/.test(password)) {
     return { valid: false, message: 'Password must contain at least one number' };
+  }
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)) {
+    return { valid: false, message: 'Password must contain at least one special character (!@#$%^&*...)' };
   }
   return { valid: true, message: 'Password is strong' };
 }

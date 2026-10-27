@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import crypto from 'crypto';
 import { prisma } from './prisma';
 
 /**
@@ -356,22 +357,23 @@ export function chunk<T>(array: T[], size: number): T[][] {
  */
 
 /**
- * Generate random string
+ * Generate cryptographically secure random string
  */
 export function randomString(length: number): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    const randomIndex = crypto.randomInt(0, chars.length);
+    result += chars.charAt(randomIndex);
   }
   return result;
 }
 
 /**
- * Generate random number between min and max (inclusive)
+ * Generate cryptographically secure random number between min and max (inclusive)
  */
 export function randomNumber(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return crypto.randomInt(min, max + 1);
 }
 
 /**
@@ -421,13 +423,14 @@ export async function comparePassword(password: string, hash: string): Promise<b
 }
 
 /**
- * Generate secure random password
+ * Generate cryptographically secure random password
  */
 export function generateSecurePassword(length: number = 16): string {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
   let password = '';
   for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
+    const randomIndex = crypto.randomInt(0, charset.length);
+    password += charset.charAt(randomIndex);
   }
   return password;
 }
@@ -453,15 +456,57 @@ export function maskEmail(email: string): string {
 }
 
 /**
- * Generate OTP (One-Time Password)
+ * Generate cryptographically secure OTP (One-Time Password)
  */
 export function generateOTP(length: number = 6): string {
   const chars = '0123456789';
   let otp = '';
   for (let i = 0; i < length; i++) {
-    otp += chars.charAt(Math.floor(Math.random() * chars.length));
+    const randomIndex = crypto.randomInt(0, chars.length);
+    otp += chars.charAt(randomIndex);
   }
   return otp;
+}
+
+/**
+ * Sanitize plain text input: strip dangerous characters to prevent stored XSS and injection
+ */
+export function sanitizeText(input: unknown): string {
+  if (typeof input !== 'string') return '';
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+/**
+ * Sanitize HTML content: strips script tags, iframe, object, embed, event handlers
+ */
+export function sanitizeHtml(html: string): string {
+  if (!html || typeof html !== 'string') return '';
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+    .replace(/on\w+\s*=\s*(?:["'][^"']*["']|[^\s>]+)/gi, '')
+    .replace(/javascript:[^"']*/gi, '');
+}
+
+/**
+ * Safe JSON serializer for embedding inside <script type="application/ld+json">
+ * Prevents script breakout XSS by encoding '<', '>', '&', and line terminators
+ */
+export function safeJsonLdStringify(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 /**

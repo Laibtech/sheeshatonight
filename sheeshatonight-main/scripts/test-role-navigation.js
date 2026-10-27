@@ -23,15 +23,18 @@ function makeRequest(options, postData = null) {
   });
 }
 
+const PORT = parseInt(process.env.PORT || '3001', 10);
+
 async function login(email, password) {
   const postData = JSON.stringify({ email, password });
   const res = await makeRequest(
     {
       hostname: 'localhost',
-      port: 3000,
+      port: PORT,
       path: '/api/auth/login',
       method: 'POST',
       headers: {
+        Origin: `http://localhost:${PORT}`,
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(postData),
       },
@@ -65,7 +68,7 @@ async function get(path, cookieStr = '') {
 
   return makeRequest({
     hostname: 'localhost',
-    port: 3000,
+    port: PORT,
     path,
     method: 'GET',
     headers,

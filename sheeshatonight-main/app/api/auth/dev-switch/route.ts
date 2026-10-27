@@ -7,8 +7,23 @@ import { generateToken } from '@/lib/jwt';
  * Developer / QA helper route to switch active authentication session in browser
  */
 export async function GET(request: NextRequest) {
-  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DEV_SWITCH !== 'true') {
-    return NextResponse.json({ error: 'Dev switch is disabled in production' }, { status: 403 });
+  // Completely disable dev switch in production mode to prevent unauthorized privilege escalation
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Require an explicit DEV_SWITCH_SECRET to prevent unauthorized privilege escalation
+  const devSecret = process.env.DEV_SWITCH_SECRET;
+  if (!devSecret) {
+    return NextResponse.json(
+      { error: 'Dev switch is disabled (DEV_SWITCH_SECRET is unconfigured)' },
+      { status: 403 }
+    );
+  }
+
+  const providedSecret = request.headers.get('x-dev-secret') || new URL(request.url).searchParams.get('secret');
+  if (providedSecret !== devSecret) {
+    return NextResponse.json({ error: 'Unauthorized dev-switch request' }, { status: 403 });
   }
 
   const { searchParams } = new URL(request.url);

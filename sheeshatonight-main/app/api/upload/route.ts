@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 import { withAuth, AuthenticatedRequest } from '@/lib/middleware';
+import { rateLimiters, withRateLimit } from '@/lib/rateLimiter';
 
 /**
  * POST /api/upload
  * Upload images to local filesystem (public/uploads)
  * Returns array of URLs
  */
-export const POST = withAuth(async (req: AuthenticatedRequest) => {
+export const POST = withRateLimit(rateLimiters.upload, withAuth(async (req: AuthenticatedRequest) => {
   try {
     const formData = await req.formData();
     const files = formData.getAll('files') as File[];
@@ -71,9 +73,9 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      // Generate strictly sanitized unique filename
+      // Generate strictly sanitized unique filename with cryptographically random identifier
       const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 10);
+      const randomString = crypto.randomBytes(8).toString('hex');
       const safeExtension = path.extname(file.name).toLowerCase().replace(/[^a-z0-9.]/g, '') || '.jpg';
       const filename = `product-${timestamp}-${randomString}${safeExtension}`;
 
@@ -99,5 +101,4 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       { status: 500 }
     );
   }
-});
-
+}));

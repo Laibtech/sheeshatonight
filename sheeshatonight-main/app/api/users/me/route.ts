@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         role: true,
         locale: true,
         verified: true,
-        kycStatus: true,
+        status: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -64,6 +64,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    if (user.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Account is inactive or suspended' },
+        { status: 403 }
       );
     }
 
@@ -118,6 +125,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    if (user.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Account is inactive or suspended' },
+        { status: 403 }
       );
     }
 

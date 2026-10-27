@@ -1,9 +1,14 @@
 const http = require('http');
 
+const PORT = parseInt(process.env.PORT || '3001', 10);
+
 function request(options, body = null) {
   return new Promise((resolve, reject) => {
     const postData = body ? JSON.stringify(body) : null;
-    const headers = { ...options.headers };
+    const headers = { 
+      Origin: `http://localhost:${PORT}`,
+      ...options.headers 
+    };
     if (postData) {
       headers['Content-Type'] = 'application/json';
       headers['Content-Length'] = Buffer.byteLength(postData);
@@ -12,7 +17,7 @@ function request(options, body = null) {
     const req = http.request(
       {
         hostname: 'localhost',
-        port: 3000,
+        port: PORT,
         path: options.path,
         method: options.method || 'GET',
         headers,

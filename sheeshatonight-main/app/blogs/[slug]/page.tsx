@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { sanitizeHtml } from '@/lib/utils';
 
 export default function BlogDetailPage() {
   const params = useParams();
@@ -150,7 +151,7 @@ export default function BlogDetailPage() {
             {/* Blog Content */}
             <div 
               className="prose prose-lg max-w-none prose-headings:text-slate-900 prose-h2:text-3xl prose-h2:font-bold prose-h2:mt-12 prose-h2:mb-4 prose-p:text-slate-600 prose-p:leading-relaxed prose-p:mb-6"
-              dangerouslySetInnerHTML={{ __html: blog.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(blog.content) }}
             />
 
             {/* CTA Box */}

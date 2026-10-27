@@ -136,6 +136,12 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       const p = products.find((pr) => pr.id === item.productId);
       if (!p) continue;
       const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+      if (p.stock < qty) {
+        return NextResponse.json({
+          success: false,
+          error: `Insufficient stock for "${p.title}". Available: ${p.stock}, Requested: ${qty}`,
+        }, { status: 400 });
+      }
       const price = Number(p.price);
       totalAmount += price * qty;
       orderItemsData.push({

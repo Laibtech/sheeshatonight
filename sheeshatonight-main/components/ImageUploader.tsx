@@ -4,18 +4,20 @@ import React, { useState, useRef } from 'react';
 import { Upload, Link as LinkIcon, Image as ImageIcon, X, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface ImageUploaderProps {
-  value: string;
+  value?: string | null;
   onChange: (url: string) => void;
   label?: string;
   className?: string;
 }
 
-export function ImageUploader({ value, onChange, label = 'Product Image', className = '' }: ImageUploaderProps) {
+export function ImageUploader({ value = '', onChange, label = 'Product Image', className = '' }: ImageUploaderProps) {
   const [tab, setTab] = useState<'file' | 'url'>('file');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const safeValue = typeof value === 'string' ? value : '';
 
   const getAuthToken = () => {
     if (typeof window === 'undefined') return '';
@@ -59,6 +61,9 @@ export function ImageUploader({ value, onChange, label = 'Product Image', classN
       setError(err.message || 'Server error uploading file');
     } finally {
       setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -91,6 +96,16 @@ export function ImageUploader({ value, onChange, label = 'Product Image', classN
 
   return (
     <div className={`space-y-2 ${className}`}>
+      {/* Hidden file input placed outside conditional blocks to prevent React DOM reconciliation reusing input element */}
+      <input
+        key="image-uploader-hidden-file-input"
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/jpg"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       <div className="flex items-center justify-between">
         <label className="block text-xs font-bold text-slate-700">{label}</label>
         <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px]">
@@ -117,6 +132,7 @@ export function ImageUploader({ value, onChange, label = 'Product Image', classN
 
       {tab === 'file' ? (
         <div
+          key="tab-file-panel"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -124,35 +140,27 @@ export function ImageUploader({ value, onChange, label = 'Product Image', classN
           className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[110px] relative ${
             dragActive
               ? 'border-[#D4AF37] bg-amber-50/50'
-              : value
+              : safeValue
               ? 'border-emerald-300 bg-emerald-50/20 hover:bg-slate-50'
               : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
           }`}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/jpg"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-
           {uploading ? (
             <div className="flex flex-col items-center gap-2 py-2">
               <Loader2 className="w-6 h-6 text-[#D4AF37] animate-spin" />
               <span className="text-xs font-semibold text-slate-600">Uploading to server...</span>
             </div>
-          ) : value ? (
+          ) : safeValue ? (
             <div className="flex items-center gap-3 w-full justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-lg border border-slate-200 bg-slate-100 overflow-hidden shrink-0 relative">
-                  <img src={value} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={safeValue} alt="Preview" className="w-full h-full object-cover" />
                 </div>
                 <div className="text-left">
                   <div className="text-xs font-bold text-slate-900 flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Image Selected
                   </div>
-                  <div className="text-[11px] text-slate-500 line-clamp-1 max-w-[200px]">{value}</div>
+                  <div className="text-[11px] text-slate-500 line-clamp-1 max-w-[200px]">{safeValue}</div>
                 </div>
               </div>
               <button
@@ -182,18 +190,19 @@ export function ImageUploader({ value, onChange, label = 'Product Image', classN
           )}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div key="tab-url-panel" className="space-y-2">
           <input
+            key="tab-url-text-input"
             type="text"
-            value={value}
+            value={safeValue}
             onChange={(e) => onChange(e.target.value)}
             placeholder="https://images.unsplash.com/photo-..."
             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
           />
-          {value && (
+          {safeValue && (
             <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl">
-              <img src={value} alt="URL Preview text" className="w-10 h-10 object-cover rounded-lg shrink-0 border" />
-              <span className="text-[11px] text-slate-600 line-clamp-1 flex-1">{value}</span>
+              <img src={safeValue} alt="URL Preview text" className="w-10 h-10 object-cover rounded-lg shrink-0 border" />
+              <span className="text-[11px] text-slate-600 line-clamp-1 flex-1">{safeValue}</span>
               <button
                 type="button"
                 onClick={() => onChange('')}

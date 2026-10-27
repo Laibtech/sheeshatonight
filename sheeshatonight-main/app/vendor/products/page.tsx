@@ -56,16 +56,6 @@ export default function VendorProductsPage() {
     return token || '';
   };
 
-  useEffect(() => {
-    fetchProducts();
-    if (typeof window !== 'undefined') {
-      const sp = new URLSearchParams(window.location.search);
-      if (sp.get('add') === 'true') {
-        handleOpenAddModal();
-      }
-    }
-  }, []);
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -100,12 +90,22 @@ export default function VendorProductsPage() {
     setShowAddModal(true);
   };
 
+  useEffect(() => {
+    fetchProducts();
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get('add') === 'true') {
+        handleOpenAddModal();
+      }
+    }
+  }, []);
+
   const handleOpenEditModal = (p: ProductItem) => {
     setEditingProduct(p);
-    setTitle(p.title);
+    setTitle(p.title || '');
     setDescription(p.description || '');
-    setPrice(p.price.toString());
-    setStock(p.stock.toString());
+    setPrice(p.price !== undefined && p.price !== null ? p.price.toString() : '');
+    setStock(p.stock !== undefined && p.stock !== null ? p.stock.toString() : '10');
     setType(p.type || 'TOBACCO_BLEND');
     setSku(p.sku || '');
     let img = '';
@@ -265,7 +265,7 @@ export default function VendorProductsPage() {
             <input
               type="text"
               placeholder="Search product title or SKU..."
-              value={search}
+              value={search || ''}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
             />
@@ -362,7 +362,7 @@ export default function VendorProductsPage() {
                   <label className="block text-xs font-bold text-slate-700 mb-1">Product Title *</label>
                   <input
                     type="text"
-                    value={title}
+                    value={title || ''}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Double Apple Special Blend"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
@@ -374,7 +374,7 @@ export default function VendorProductsPage() {
                   <label className="block text-xs font-bold text-slate-700 mb-1">Description / Variations</label>
                   <textarea
                     rows={3}
-                    value={description}
+                    value={description || ''}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Flavor description, ingredients, origin..."
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
@@ -387,7 +387,7 @@ export default function VendorProductsPage() {
                     <input
                       type="number"
                       step="0.01"
-                      value={price}
+                      value={price || ''}
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="120.00"
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
@@ -398,7 +398,7 @@ export default function VendorProductsPage() {
                     <label className="block text-xs font-bold text-slate-700 mb-1">Stock Units *</label>
                     <input
                       type="number"
-                      value={stock}
+                      value={stock || ''}
                       onChange={(e) => setStock(e.target.value)}
                       placeholder="10"
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
@@ -411,7 +411,7 @@ export default function VendorProductsPage() {
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Category / Type</label>
                     <select
-                      value={type}
+                      value={type || 'TOBACCO_BLEND'}
                       onChange={(e) => setType(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
                     >
@@ -426,14 +426,14 @@ export default function VendorProductsPage() {
                     <label className="block text-xs font-bold text-slate-700 mb-1">SKU</label>
                     <input
                       type="text"
-                      value={sku}
+                      value={sku || ''}
                       onChange={(e) => setSku(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
                     />
                   </div>
                 </div>
 
-                <ImageUploader value={imageUrl} onChange={setImageUrl} label="Product Image (Upload File or URL)" />
+                <ImageUploader value={imageUrl || ''} onChange={setImageUrl} label="Product Image (Upload File or URL)" />
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                   <button
@@ -474,7 +474,7 @@ export default function VendorProductsPage() {
                   <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
                   <input
                     type="text"
-                    value={title}
+                    value={title || ''}
                     onChange={(e) => setTitle(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
                     required
@@ -485,7 +485,7 @@ export default function VendorProductsPage() {
                   <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
                   <textarea
                     rows={3}
-                    value={description}
+                    value={description || ''}
                     onChange={(e) => setDescription(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
                   />
@@ -497,7 +497,7 @@ export default function VendorProductsPage() {
                     <input
                       type="number"
                       step="0.01"
-                      value={price}
+                      value={price || ''}
                       onChange={(e) => setPrice(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
                       required
@@ -507,7 +507,7 @@ export default function VendorProductsPage() {
                     <label className="block text-xs font-bold text-slate-700 mb-1">Stock Units</label>
                     <input
                       type="number"
-                      value={stock}
+                      value={stock || ''}
                       onChange={(e) => setStock(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#D4AF37]"
                       required
@@ -515,7 +515,7 @@ export default function VendorProductsPage() {
                   </div>
                 </div>
 
-                <ImageUploader value={imageUrl} onChange={setImageUrl} label="Product Image (Upload File or URL)" />
+                <ImageUploader value={imageUrl || ''} onChange={setImageUrl} label="Product Image (Upload File or URL)" />
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                   <button

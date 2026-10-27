@@ -94,6 +94,7 @@ export function ImageUpload({ value = [], onChange, maxImages = 5, disabled = fa
       {canAddMore && (
         <div>
           <input
+            key="multi-image-file-input"
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/jpg,image/png,image/webp"

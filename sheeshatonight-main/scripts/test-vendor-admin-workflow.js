@@ -1,14 +1,16 @@
 const http = require('http');
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 function request(options, data = null) {
   return new Promise((resolve, reject) => {
     const postData = data ? JSON.stringify(data) : null;
     const reqOptions = {
       hostname: 'localhost',
-      port: 3000,
+      port: PORT,
       path: options.path,
       method: options.method || 'GET',
       headers: {
+        Origin: `http://localhost:${PORT}`,
         'Content-Type': 'application/json',
         ...(postData ? { 'Content-Length': Buffer.byteLength(postData) } : {}),
         ...(options.headers || {}),

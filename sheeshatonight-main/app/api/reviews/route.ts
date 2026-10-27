@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAuth, AuthenticatedRequest } from '@/lib/middleware';
+import { sanitizeText } from '@/lib/utils';
 
 /**
  * GET /api/reviews - Get reviews (filter by productId or vendorId)
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get('productId');
     const vendorId = searchParams.get('vendorId');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '20', 10)), 100);
 
     const where: any = { status: 'APPROVED' };
     
@@ -92,12 +93,30 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     }
 
     // Validate rating
-    if (!rating || rating < 1 || rating > 5) {
+    const numRating = Number(rating);
+    if (!Number.isInteger(numRating) || numRating < 1 || numRating > 5) {
       return NextResponse.json(
-        { success: false, error: 'Rating must be between 1 and 5' },
+        { success: false, error: 'Rating must be an integer between 1 and 5' },
         { status: 400 }
       );
     }
+
+    // Validate and sanitize comment input
+    if (comment !== undefined && comment !== null && typeof comment !== 'string') {
+      return NextResponse.json(
+        { success: false, error: 'Comment must be a text string' },
+        { status: 400 }
+      );
+    }
+
+    const rawComment = (comment || '').trim();
+    if (rawComment.length > 1000) {
+      return NextResponse.json(
+        { success: false, error: 'Comment must be 1000 characters or less' },
+        { status: 400 }
+      );
+    }
+    const cleanComment = rawComment ? sanitizeText(rawComment) : null;
 
     // Check if user has completed an order with this product/vendor
     if (productId) {
@@ -173,8 +192,8 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         userId,
         productId: productId || null,
         vendorId: vendorId || null,
-        rating,
-        comment: comment || null,
+        rating: numRating,
+        comment: cleanComment,
         status: 'APPROVED', // Auto-approve for MVP
       },
     });
