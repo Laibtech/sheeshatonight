@@ -24,9 +24,13 @@ interface CategoryRecord {
   slug: string;
   description?: string;
   image?: string;
+  icon?: string;
+  parentId?: string;
   isActive: boolean;
   isFeatured: boolean;
   sortOrder: number;
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export default function AdminCategoriesPage() {
@@ -46,9 +50,12 @@ export default function AdminCategoriesPage() {
     slug: '',
     description: '',
     image: '',
+    icon: '',
     isActive: true,
     isFeatured: false,
     sortOrder: 0,
+    seoTitle: '',
+    seoDescription: '',
   });
 
   // Delete modal
@@ -104,9 +111,12 @@ export default function AdminCategoriesPage() {
       slug: '',
       description: '',
       image: '',
+      icon: '',
       isActive: true,
       isFeatured: false,
-      sortOrder: 0,
+      sortOrder: categories.length + 1,
+      seoTitle: '',
+      seoDescription: '',
     });
     setModalOpen(true);
   };
@@ -118,9 +128,12 @@ export default function AdminCategoriesPage() {
       slug: cat.slug,
       description: cat.description || '',
       image: cat.image || '',
+      icon: cat.icon || '',
       isActive: cat.isActive,
       isFeatured: cat.isFeatured,
       sortOrder: cat.sortOrder || 0,
+      seoTitle: cat.seoTitle || '',
+      seoDescription: cat.seoDescription || '',
     });
     setModalOpen(true);
   };
@@ -361,17 +374,31 @@ export default function AdminCategoriesPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#29252B] mb-1">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. /Categories/Rentals.webp"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#FAF8FB] border border-[#E9E3EB] rounded-xl text-xs text-[#29252B] focus:outline-none focus:border-[#74189B]"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#29252B] mb-1">
+                    Image URL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. /Categories/Rentals.webp"
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#FAF8FB] border border-[#E9E3EB] rounded-xl text-xs text-[#29252B] focus:outline-none focus:border-[#74189B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#29252B] mb-1">
+                    Category Icon (SVG / Lucide)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Package, Flame, Sparkles"
+                    value={formData.icon}
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#FAF8FB] border border-[#E9E3EB] rounded-xl text-xs text-[#29252B] focus:outline-none focus:border-[#74189B]"
+                  />
+                </div>
               </div>
 
               <div>
@@ -393,12 +420,35 @@ export default function AdminCategoriesPage() {
                   Description
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="Category description for customer discovery..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3.5 py-2 bg-[#FAF8FB] border border-[#E9E3EB] rounded-xl text-xs text-[#29252B] focus:outline-none focus:border-[#74189B]"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 p-3 bg-purple-50/50 rounded-xl border border-purple-100">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">SEO Meta Title</label>
+                  <input
+                    type="text"
+                    placeholder="Meta Title"
+                    value={formData.seoTitle}
+                    onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+                    className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">SEO Meta Description</label>
+                  <input
+                    type="text"
+                    placeholder="Meta Description"
+                    value={formData.seoDescription}
+                    onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+                    className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-6 pt-1">

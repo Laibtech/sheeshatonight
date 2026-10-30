@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from '@/lib/middleware';
+import { logAdminAction } from '@/lib/audit';
 
 // GET: List all pages with optional search, status filtering, and sorting
 export const GET = withAdmin(async (req: AuthenticatedRequest) => {
@@ -43,7 +44,7 @@ export const GET = withAdmin(async (req: AuthenticatedRequest) => {
 export const POST = withAdmin(async (req: AuthenticatedRequest) => {
   try {
     const body = await req.json();
-    const { title, slug, content, seoTitle, seoDescription, isActive = true } = body;
+    const { title, slug, content, seoTitle, seoDescription, ogImage, canonicalUrl, isActive = true } = body;
 
     if (!title) {
       return errorResponse('Page title is required', 400);
@@ -60,8 +61,18 @@ export const POST = withAdmin(async (req: AuthenticatedRequest) => {
         content: content || '',
         seoTitle: seoTitle || null,
         seoDescription: seoDescription || null,
+        ogImage: ogImage || null,
+        canonicalUrl: canonicalUrl || null,
         isActive: Boolean(isActive),
       },
+    });
+
+    await logAdminAction({
+      userId: req.user?.userId,
+      action: 'CREATE_CMS_PAGE',
+      resourceType: 'CMS_PAGE',
+      resourceId: page.id,
+      afterState: { title: page.title, slug: page.slug },
     });
 
     return successResponse(page, 'Page created successfully', 201);

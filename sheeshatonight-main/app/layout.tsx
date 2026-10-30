@@ -13,6 +13,7 @@ import { AuthProvider } from '@/components/AuthProvider';
 import { CartProvider } from '@/contexts/CartContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
 import WhatsAppFloat from '@/components/WhatsAppFloat';
+import ScrollToTop from '@/components/ScrollToTop';
 import VerticalMarquee from '@/components/VerticalMarquee';
 import AgeVerification from '@/components/AgeVerification';
 import MobileBottomNav from '@/components/MobileBottomNav';
@@ -156,11 +157,12 @@ export default async function RootLayout({
   } catch (e) {}
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* PWA & Mobile Web App Manifest */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#74189B" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="SheeshaTonight" />
@@ -242,6 +244,7 @@ export default async function RootLayout({
               <AuthHydration />
               <LayoutWrapper>{children}</LayoutWrapper>
               <WhatsAppFloat />
+              <ScrollToTop />
               <VerticalMarquee />
               <AgeVerification />
               <MobileBottomNav />

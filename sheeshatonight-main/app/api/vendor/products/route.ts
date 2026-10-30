@@ -62,6 +62,16 @@ export const POST = withVendor(async (req: AuthenticatedRequest) => {
       return errorResponse(`Validation failed: ${readableErrors}`, 400, 'VALIDATION_ERROR', errorMap);
     }
 
+    // Verify vendor is active and approved by admin
+    const vendorRecord = await prisma.vendor.findUnique({
+      where: { id: req.user!.vendorId! },
+      select: { isActive: true },
+    });
+
+    if (!vendorRecord || !vendorRecord.isActive) {
+      return errorResponse('Forbidden: Your vendor store is pending admin approval or currently inactive', 403);
+    }
+
     const product = await prisma.product.create({
       data: {
         ...validation.data,

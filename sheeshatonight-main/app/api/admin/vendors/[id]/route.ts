@@ -188,3 +188,5 @@ export async function POST(
     }
   })(request);
 }
+
+export const PATCH = PUT;

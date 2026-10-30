@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from '@/lib/middleware';
+import { logAdminAction } from '@/lib/audit';
 
 // GET: List all banners
 export const GET = withAdmin(async (req: AuthenticatedRequest) => {
   try {
     const banners = await prisma.cmsBanner.findMany({
-      orderBy: { sortOrder: 'asc' },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' },
+      ],
     });
 
     return successResponse({ banners, data: banners });
@@ -41,11 +45,11 @@ export const POST = withAdmin(async (req: AuthenticatedRequest) => {
     const banner = await prisma.cmsBanner.create({
       data: {
         heading,
-        subtitle,
-        ctaText,
-        ctaUrl,
-        desktopImg,
-        mobileImg,
+        subtitle: subtitle || null,
+        ctaText: ctaText || null,
+        ctaUrl: ctaUrl || null,
+        desktopImg: desktopImg || null,
+        mobileImg: mobileImg || null,
         position,
         sortOrder: Number(sortOrder) || 0,
         isActive: Boolean(isActive),
@@ -54,7 +58,15 @@ export const POST = withAdmin(async (req: AuthenticatedRequest) => {
       },
     });
 
-    return successResponse({ banner, data: banner }, 'Banner created successfully', 201);
+    await logAdminAction({
+      userId: req.user?.userId,
+      action: 'CREATE_BANNER',
+      resourceType: 'CMS_BANNER',
+      resourceId: banner.id,
+      afterState: banner,
+    });
+
+    return successResponse({ banner, data: banner }, 'Banner created successfully in MySQL', 201);
   } catch (error: any) {
     console.error('CMS Banner POST Error:', error);
     return errorResponse(error.message || 'Failed to create banner', 500);

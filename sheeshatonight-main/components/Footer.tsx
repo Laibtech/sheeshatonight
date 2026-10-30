@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Instagram,
@@ -9,53 +10,192 @@ import {
   Mail,
   Phone,
   MapPin,
+  Send,
 } from "lucide-react";
 
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
+interface FooterColumn {
+  title: string;
+  links: FooterLink[];
+}
+
+interface FooterContentData {
+  brandDescription?: string;
+  newsletter?: {
+    enabled?: boolean;
+    title?: string;
+    subtitle?: string;
+  };
+  columns?: FooterColumn[];
+  contact?: {
+    address?: string;
+    phone?: string;
+    email?: string;
+  };
+  social?: {
+    instagram?: string;
+    facebook?: string;
+    linkedin?: string;
+    tiktok?: string;
+  };
+  copyright?: string;
+}
+
+const defaultFooterData: FooterContentData = {
+  brandDescription:
+    "Your premium destination for sheesha rentals, products, flavors, accessories and unforgettable experiences across the UAE.",
+  newsletter: {
+    enabled: true,
+    title: "Premium experiences, straight to your inbox.",
+    subtitle: "Get exclusive offers, new arrivals and the latest sheesha experiences across the UAE.",
+  },
+  columns: [
+    {
+      title: "SHOP",
+      links: [
+        { label: "All Products", href: "/shop" },
+        { label: "Sheesha Flavors", href: "/categories/flavors" },
+        { label: "Sheesha Setups", href: "/categories/sheesha-setups" },
+        { label: "Accessories", href: "/categories/accessories" },
+        { label: "Buy Sheesha", href: "/categories/buy-sheesha" },
+      ],
+    },
+    {
+      title: "RENTALS",
+      links: [
+        { label: "All Rentals", href: "/rentals" },
+        { label: "Villa", href: "/rentals?event=villa" },
+        { label: "Yacht", href: "/rentals?event=yacht" },
+        { label: "Corporate", href: "/rentals?event=corporate" },
+        { label: "Weddings", href: "/rentals?event=weddings" },
+        { label: "Birthdays", href: "/rentals?event=birthday" },
+      ],
+    },
+    {
+      title: "COMPANY",
+      links: [
+        { label: "About Us", href: "/about" },
+        { label: "Verified Vendors", href: "/vendors" },
+        { label: "Join as Vendor", href: "/auth/signup?role=vendor" },
+        { label: "Vendor Support", href: "/vendor-support" },
+        { label: "Contact Us", href: "/contact" },
+        { label: "FAQ", href: "/faqs" },
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "Terms & Conditions", href: "/terms" },
+      ],
+    },
+  ],
+  contact: {
+    address: "Dubai, United Arab Emirates",
+    phone: "+971 50 912 1111",
+    email: "support@sheeshatonight.com",
+  },
+  social: {
+    instagram: "https://www.instagram.com/sheesha_tonight/",
+    facebook: "https://www.facebook.com/sheeshatonight/",
+    linkedin: "https://www.linkedin.com/company/sheesha-tonight/",
+    tiktok: "https://www.tiktok.com/@sheesha.tonight",
+  },
+  copyright: `© ${new Date().getFullYear()} SheeshaTonight. All rights reserved.`,
+};
+
 export default function Footer() {
+  const [data, setData] = useState<FooterContentData>(defaultFooterData);
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/cms/content/footer_content")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.success && json.data) {
+          setData((prev) => ({
+            ...prev,
+            ...json.data,
+            columns: json.data.columns || prev.columns,
+            contact: { ...prev.contact, ...(json.data.contact || {}) },
+            social: { ...prev.social, ...(json.data.social || {}) },
+            newsletter: { ...prev.newsletter, ...(json.data.newsletter || {}) },
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      setSubscribed(true);
+      setEmail("");
+    }
+  };
+
+  const newsletter = data.newsletter || defaultFooterData.newsletter;
+  const contact = data.contact || defaultFooterData.contact;
+  const social = data.social || defaultFooterData.social;
+  const columns = data.columns && data.columns.length > 0 ? data.columns : defaultFooterData.columns!;
+
   return (
     <footer className="bg-[#571275] text-white">
-      <section className="border-b border-white/10">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div>
-              <span className="text-[#F1A51D] text-[11px] uppercase tracking-[3px] font-bold">
-                Stay In The Loop
-              </span>
+      {/* Newsletter Section */}
+      {newsletter?.enabled !== false && (
+        <section className="border-b border-white/10">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-14">
+            <div className="grid lg:grid-cols-2 gap-8 items-center">
+              <div>
+                <span className="text-[#F1A51D] text-[11px] uppercase tracking-[3px] font-bold">
+                  Stay In The Loop
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-bold mt-2">
+                  {newsletter?.title || "Premium experiences, straight to your inbox."}
+                </h2>
+                <p className="text-white/60 text-sm mt-4 max-w-lg">
+                  {newsletter?.subtitle || "Get exclusive offers, new arrivals and the latest sheesha experiences across the UAE."}
+                </p>
+              </div>
 
-              <h2 className="text-3xl sm:text-4xl font-bold mt-2">
-                Premium experiences,
-                <br />
-                straight to your inbox.
-              </h2>
-
-              <p className="text-white/60 text-sm mt-4 max-w-lg">
-                Get exclusive offers, new arrivals and the latest sheesha
-                experiences across the UAE.
-              </p>
-            </div>
-
-            <div>
-              <div className="flex items-center bg-white rounded-2xl p-2 max-w-[540px] lg:ml-auto shadow-lg min-h-[58px] sm:min-h-[64px]">
-                <input
-                  id="footer-newsletter-email"
-                  name="footer-newsletter-email"
-                  type="email"
-                  placeholder="Enter your email address"
-                  autoComplete="email"
-                  className="flex-1 min-w-0 px-4 sm:px-6 py-3 bg-transparent outline-none text-sm sm:text-base text-gray-800 placeholder-gray-400 font-medium"
-                />
-
-                <button className="bg-[#F1A51D] hover:bg-[#d99010] text-white px-6 sm:px-9 py-3 sm:py-3.5 rounded-xl text-sm sm:text-base font-bold transition shadow-sm hover:shadow-md shrink-0">
-                  Subscribe
-                </button>
+              <div>
+                {subscribed ? (
+                  <div className="p-4 bg-emerald-500/20 border border-emerald-400/30 rounded-2xl text-emerald-200 text-sm font-bold text-center">
+                    Thank you! You have subscribed to SheeshaTonight updates.
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={handleSubscribe}
+                    className="flex items-center bg-white rounded-2xl p-2 max-w-[540px] lg:ml-auto shadow-lg min-h-[58px] sm:min-h-[64px]"
+                  >
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      autoComplete="email"
+                      className="flex-1 min-w-0 px-4 sm:px-6 py-3 bg-transparent outline-none text-sm sm:text-base text-gray-800 placeholder-gray-400 font-medium"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-[#F1A51D] hover:bg-[#d99010] text-white px-6 sm:px-9 py-3 sm:py-3.5 rounded-xl text-sm sm:text-base font-bold transition shadow-sm hover:shadow-md shrink-0 flex items-center gap-1.5"
+                    >
+                      <span>Subscribe</span>
+                      <Send size={15} />
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
+      {/* Main Footer Links */}
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10">
+          {/* Brand Info */}
           <div className="col-span-2 lg:col-span-2">
             <Link href="/">
               <img
@@ -66,193 +206,136 @@ export default function Footer() {
             </Link>
 
             <p className="text-white/60 text-sm leading-6 mt-5 max-w-[370px]">
-              Your premium destination for sheesha rentals, products,
-              flavors, accessories and unforgettable experiences across
-              the UAE.
+              {data.brandDescription || defaultFooterData.brandDescription}
             </p>
 
+            {/* Social Icons */}
             <div className="flex gap-3 mt-6">
-              <a
-                href="https://www.instagram.com/sheesha_tonight/"
-                target="_blank"
-                rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F1A51D] flex items-center justify-center transition"
-              >
-                <Instagram size={17} />
-              </a>
+              {social?.instagram && (
+                <a
+                  href={social.instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F1A51D] flex items-center justify-center transition"
+                  title="Instagram"
+                >
+                  <Instagram size={17} />
+                </a>
+              )}
 
-              <a
-                href="https://www.facebook.com/sheeshatonight/"
-                target="_blank"
-                rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F1A51D] flex items-center justify-center transition"
-              >
-                <Facebook size={17} />
-              </a>
+              {social?.facebook && (
+                <a
+                  href={social.facebook}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F1A51D] flex items-center justify-center transition"
+                  title="Facebook"
+                >
+                  <Facebook size={17} />
+                </a>
+              )}
 
-              <a
-                href="https://www.linkedin.com/company/sheesha-tonight/"
-                target="_blank"
-                rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F1A51D] flex items-center justify-center transition"
-              >
-                <Linkedin size={17} />
-              </a>
+              {social?.linkedin && (
+                <a
+                  href={social.linkedin}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F1A51D] flex items-center justify-center transition"
+                  title="LinkedIn"
+                >
+                  <Linkedin size={17} />
+                </a>
+              )}
 
-              <a
-                href="https://www.tiktok.com/@sheesha.tonight"
-                target="_blank"
-                rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F1A51D] flex items-center justify-center transition"
-              >
-                <Music2 size={17} />
-              </a>
+              {social?.tiktok && (
+                <a
+                  href={social.tiktok}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F1A51D] flex items-center justify-center transition"
+                  title="TikTok"
+                >
+                  <Music2 size={17} />
+                </a>
+              )}
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-bold mb-5">SHOP</h3>
-
-            <div className="space-y-3 text-sm text-white/60">
-              <Link href="/shop" className="block hover:text-white">
-                All Products
-              </Link>
-              <Link href="/categories/flavors" className="block hover:text-white">
-                Sheesha Flavors
-              </Link>
-              <Link href="/categories/sheesha-setups" className="block hover:text-white">
-                Sheesha Setups
-              </Link>
-              <Link href="/categories/accessories" className="block hover:text-white">
-                Accessories
-              </Link>
-              <Link href="/categories/buy-sheesha" className="block hover:text-white">
-                Buy Sheesha
-              </Link>
+          {/* Dynamic Navigation Columns */}
+          {columns.map((col, idx) => (
+            <div key={idx}>
+              <h3 className="text-sm font-bold mb-5 tracking-wider uppercase text-white/90">
+                {col.title}
+              </h3>
+              <div className="space-y-3 text-sm text-white/60">
+                {col.links &&
+                  col.links.map((link, lIdx) => (
+                    <Link
+                      key={lIdx}
+                      href={link.href}
+                      className="block hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+              </div>
             </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold mb-5">RENTALS</h3>
-
-            <div className="space-y-3 text-sm text-white/60">
-              <Link href="/rentals" className="block hover:text-white">
-                All Rentals
-              </Link>
-              <Link href="/rentals?event=villa" className="block hover:text-white">
-                Villa
-              </Link>
-              <Link href="/rentals?event=yacht" className="block hover:text-white">
-                Yacht
-              </Link>
-              <Link href="/rentals?event=corporate" className="block hover:text-white">
-                Corporate
-              </Link>
-              <Link href="/rentals?event=weddings" className="block hover:text-white">
-                Weddings
-              </Link>
-              <Link href="/rentals?event=birthday" className="block hover:text-white">
-                Birthdays
-              </Link>
-              <Link href="/rentals?event=private" className="block hover:text-white">
-                Private Events
-              </Link>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold mb-5">COMPANY</h3>
-
-            <div className="space-y-3 text-sm text-white/60">
-              <Link href="/about" className="block hover:text-white">
-                About Us
-              </Link>
-              <Link href="/vendors" className="block hover:text-white">
-                Verified Vendors
-              </Link>
-              <Link href="/auth/signup?role=vendor" className="block hover:text-white">
-                Join as Vendor
-              </Link>
-              <Link href="/vendor-support" className="block hover:text-white">
-                Vendor Support
-              </Link>
-              <Link href="/contact" className="block hover:text-white">
-                Contact Us
-              </Link>
-              <Link href="/faqs" className="block hover:text-white">
-                FAQ
-              </Link>
-              <Link href="/privacy" className="block hover:text-white">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="block hover:text-white">
-                Terms & Conditions
-              </Link>
-            </div>
-          </div>
+          ))}
         </div>
 
+        {/* Contact Info Row */}
         <div className="grid sm:grid-cols-3 gap-4 mt-12 pt-8 border-t border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <MapPin size={17} />
             </div>
             <div>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">
-                Location
-              </p>
-              <a
-                href="https://www.google.com/maps/search/?api=1&query=Dubai%2C+United+Arab+Emirates"
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm hover:text-[#F1A51D]"
-              >
-                Dubai, United Arab Emirates
-              </a>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider">Location</p>
+              <p className="text-sm font-medium">{contact?.address || "Dubai, United Arab Emirates"}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <Phone size={17} />
             </div>
             <div>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">
-                Phone
-              </p>
-              <a href="tel:+971509121111" className="text-sm hover:text-[#F1A51D]">
-                +971 50 912 1111
+              <p className="text-[10px] text-white/40 uppercase tracking-wider">Phone</p>
+              <a
+                href={`tel:${(contact?.phone || "+971509121111").replace(/\s+/g, "")}`}
+                className="text-sm font-medium hover:text-[#F1A51D] transition"
+              >
+                {contact?.phone || "+971 50 912 1111"}
               </a>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <Mail size={17} />
             </div>
             <div>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">
-                Email
-              </p>
+              <p className="text-[10px] text-white/40 uppercase tracking-wider">Email</p>
               <a
-                href="mailto:support@sheeshatonight.com"
-                className="text-sm hover:text-[#F1A51D]"
+                href={`mailto:${contact?.email || "support@sheeshatonight.com"}`}
+                className="text-sm font-medium hover:text-[#F1A51D] transition"
               >
-                support@sheeshatonight.com
+                {contact?.email || "support@sheeshatonight.com"}
               </a>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Copyright Bar */}
       <div className="border-t border-white/10">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40 text-center sm:text-left">
-            © {new Date().getFullYear()} SheeshaTonight. All rights reserved.
+            {data.copyright || `© ${new Date().getFullYear()} SheeshaTonight. All rights reserved.`}
           </p>
 
           <div className="flex items-center gap-2 text-xs text-white/40">
-            <span className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center font-bold">
+            <span className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center font-bold text-[10px]">
               18+
             </span>
             For adults only. Please enjoy responsibly.

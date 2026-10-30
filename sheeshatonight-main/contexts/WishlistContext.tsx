@@ -225,10 +225,14 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuth]);
 
-  // Initial load and on auth changes
+  // Initial load and on auth changes (guarded to prevent infinite/duplicate refetches)
+  const prevAuthRef = React.useRef<boolean | null>(null);
   useEffect(() => {
-    fetchWishlist();
-  }, [fetchWishlist]);
+    if (prevAuthRef.current !== isAuth) {
+      prevAuthRef.current = isAuth;
+      fetchWishlist();
+    }
+  }, [fetchWishlist, isAuth]);
 
   // Add to wishlist
   const addToWishlist = async (

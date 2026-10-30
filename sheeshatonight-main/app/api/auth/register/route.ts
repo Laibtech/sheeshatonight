@@ -55,41 +55,24 @@ export const POST = withRateLimit(rateLimiters.auth, async (request: NextRequest
     // Hash password
     const hashedPassword = await hashPassword(password);
 
+    // Public registration always assigns CUSTOMER server-side.
+    // Vendor accounts must onboard through /api/auth/register/vendor or /api/vendor/apply with KYC verification.
     const user = await prisma.user.create({
       data: {
         name: trimmedName,
         email: normalizedEmail,
         phone: normalizedPhone,
         password: hashedPassword,
-        role: role === 'VENDOR' ? 'VENDOR' : 'CUSTOMER',
+        role: 'CUSTOMER',
         status: 'ACTIVE',
       },
     });
 
-    let vendorRecord = null;
-    if (user.role === 'VENDOR') {
-      const baseSlug = (trimmedName || 'vendor').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `vendor-${user.id.slice(-6)}`;
-      const existingSlug = await prisma.vendor.findUnique({ where: { slug: baseSlug } });
-      const finalSlug = existingSlug ? `${baseSlug}-${Date.now().toString().slice(-4)}` : baseSlug;
-      vendorRecord = await prisma.vendor.create({
-        data: {
-          userId: user.id,
-          name: trimmedName || 'Vendor Lounge',
-          slug: finalSlug,
-          phone: normalizedPhone,
-          location: 'Dubai, UAE',
-          isActive: true,
-          tier: 'SOLO',
-        },
-      });
-    }
-
-    // Generate JWT token
+    // Generate JWT token for customer
     const token = generateToken({
       userId: user.id,
       email: user.email,
       role: user.role,
-      vendorId: vendorRecord?.id,
     });
 
     // Create response and set auth cookies
@@ -103,10 +86,7 @@ export const POST = withRateLimit(rateLimiters.auth, async (request: NextRequest
           name: user.name,
           email: user.email,
           role: user.role,
-          vendorId: vendorRecord?.id,
-          vendorName: vendorRecord?.name,
         },
-        vendor: vendorRecord ? { id: vendorRecord.id, name: vendorRecord.name, slug: vendorRecord.slug } : undefined,
       },
       { status: 201 }
     );
@@ -115,7 +95,6 @@ export const POST = withRateLimit(rateLimiters.auth, async (request: NextRequest
       role: user.role,
       email: user.email,
       name: user.name,
-      vendorName: vendorRecord?.name,
     });
   } catch (error: any) {
     console.error('Register error:', error);

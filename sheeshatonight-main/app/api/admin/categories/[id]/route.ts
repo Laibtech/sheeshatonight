@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withAdmin, AuthenticatedRequest, errorResponse, successResponse } from '@/lib/middleware';
+import { logAdminAction } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,19 +42,49 @@ export async function PUT(
   return withAdmin(async (req: AuthenticatedRequest) => {
     try {
       const body = await req.json();
-      const { name, slug, description, image, isActive, isFeatured, sortOrder } = body;
+      const {
+        name,
+        slug,
+        description,
+        image,
+        icon,
+        parentId,
+        isActive,
+        isFeatured,
+        sortOrder,
+        seoTitle,
+        seoDescription,
+      } = body;
+
+      const existing = await prisma.category.findUnique({ where: { id } });
+      if (!existing) {
+        return errorResponse('Category not found', 404);
+      }
 
       const updated = await prisma.category.update({
         where: { id },
         data: {
-          ...(name ? { name } : {}),
-          ...(slug ? { slug } : {}),
+          ...(name ? { name: name.trim() } : {}),
+          ...(slug ? { slug: slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') } : {}),
           ...(description !== undefined ? { description } : {}),
           ...(image !== undefined ? { image } : {}),
+          ...(icon !== undefined ? { icon } : {}),
+          ...(parentId !== undefined ? { parentId } : {}),
           ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
           ...(isFeatured !== undefined ? { isFeatured: Boolean(isFeatured) } : {}),
           ...(sortOrder !== undefined ? { sortOrder: Number(sortOrder) } : {}),
+          ...(seoTitle !== undefined ? { seoTitle } : {}),
+          ...(seoDescription !== undefined ? { seoDescription } : {}),
         },
+      });
+
+      await logAdminAction({
+        userId: req.user?.userId,
+        action: 'UPDATE_CATEGORY',
+        resourceType: 'CATEGORY',
+        resourceId: id,
+        beforeState: existing,
+        afterState: updated,
       });
 
       return successResponse({ category: updated }, 'Category updated successfully');
@@ -72,15 +103,29 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const { id } = await params;
-  return withAdmin(async () => {
+  return withAdmin(async (req: AuthenticatedRequest) => {
     try {
+      const existing = await prisma.category.findUnique({ where: { id } });
+      if (!existing) {
+        return errorResponse('Category not found', 404);
+      }
+
       await prisma.category.delete({
         where: { id },
       });
+
+      await logAdminAction({
+        userId: req.user?.userId,
+        action: 'DELETE_CATEGORY',
+        resourceType: 'CATEGORY',
+        resourceId: id,
+        beforeState: existing,
+      });
+
       return successResponse({ id }, 'Category deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Delete category error:', error);
-      return errorResponse('Failed to delete category', 500);
+      return errorResponse(error.message || 'Failed to delete category', 500);
     }
   })(request);
 }

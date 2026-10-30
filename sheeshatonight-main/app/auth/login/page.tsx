@@ -116,6 +116,7 @@ function LoginContent() {
         CUSTOMER: '/dashboard',
         VENDOR: '/vendor',
         ADMIN: '/admin',
+        SUPER_ADMIN: '/admin',
       };
 
       const redirectParam = searchParams?.get('redirect');
@@ -123,7 +124,7 @@ function LoginContent() {
 
       // Smart role-based redirect validation: avoid trapping admin in customer routes
       if (redirectParam) {
-        if (user.role === 'ADMIN' && redirectParam.startsWith('/admin')) {
+        if ((user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && redirectParam.startsWith('/admin')) {
           targetPath = redirectParam;
         } else if (user.role === 'VENDOR' && redirectParam.startsWith('/vendor')) {
           targetPath = redirectParam;

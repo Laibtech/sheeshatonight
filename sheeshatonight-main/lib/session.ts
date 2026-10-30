@@ -1,5 +1,5 @@
 export interface SessionPayload {
-  role: 'CUSTOMER' | 'VENDOR' | 'ADMIN';
+  role: 'CUSTOMER' | 'VENDOR' | 'ADMIN' | 'SUPER_ADMIN';
   email: string;
   name: string;
   region: string;

@@ -132,7 +132,7 @@ export const POST = withRateLimit(rateLimiters.auth, async (request: NextRequest
           description: businessType ? `${businessType} business` : null,
           phone: normalizedPhone,
           location: region || null,
-          isActive: true, // Auto-active for demonstration
+          isActive: false, // Requires KYC and admin approval
           tier: 'SOLO', // Default tier
         },
       });

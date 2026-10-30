@@ -47,8 +47,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return getInitialAuth(allowedRoles).isAuthorized;
+  });
+  const [isChecking, setIsChecking] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return !getInitialAuth(allowedRoles).isAuthorized;
+  });
   const [unauthorizedState, setUnauthorizedState] = useState<{
     role: UserRole;
     email: string;
@@ -118,8 +124,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
               document.cookie = `user_name=${encodeURIComponent(serverUser.name || 'User')}; path=/; max-age=604800;`;
             }
           }
-        } else if (!currentRole && !token) {
-          // Unauthenticated -> redirect to login with intended redirect parameter
+        } else if (res.status === 401 || (!currentRole && !token)) {
+          // Unauthenticated or invalid token -> clear invalid state & redirect to login
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_role');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_name');
+            document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+            document.cookie = 'user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+            document.cookie = 'user_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+          }
           if (isMounted) {
             setIsChecking(false);
             setIsAuthorized(false);
@@ -172,12 +187,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       }
     };
 
-    verifyAccess();
+    if (!isAuthorized) {
+      verifyAccess();
+    } else {
+      setIsChecking(false);
+    }
 
     return () => {
       isMounted = false;
     };
-  }, [router, rolesKey, isAuthorized]);
+  }, [router, rolesKey]);
 
   if (!mounted || (isChecking && !isAuthorized && !unauthorizedState)) {
     return (

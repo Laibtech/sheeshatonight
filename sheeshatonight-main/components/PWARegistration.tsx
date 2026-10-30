@@ -21,6 +21,20 @@ export default function PWARegistration() {
       }
     }
 
+    // In development mode, aggressively unregister any stale service workers to prevent HMR caching reload loops
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env.NODE_ENV !== 'production') {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const reg of registrations) {
+          reg.unregister();
+        }
+      });
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((key) => caches.delete(key));
+        });
+      }
+    }
+
     // Register Service Worker in production
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       window.addEventListener('load', () => {

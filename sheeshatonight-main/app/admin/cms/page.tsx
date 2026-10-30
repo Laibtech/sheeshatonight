@@ -13,7 +13,14 @@ import {
   Megaphone,
   Globe,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Layers,
+  Compass,
+  FolderOpen,
+  HelpCircle,
+  BookOpen,
+  Eye,
+  Settings
 } from 'lucide-react';
 import { useToast } from '@/components/admin/Toast';
 
@@ -49,7 +56,6 @@ export default function AdminCmsPage() {
       const token = localStorage.getItem('auth_token');
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Fetch Hero Content
       const [heroRes, announceRes, pagesRes, bannersRes] = await Promise.all([
         fetch('/api/admin/cms/content/homepage_hero', { headers }).catch(() => null),
         fetch('/api/admin/cms/content/announcement_bar', { headers }).catch(() => null),
@@ -61,9 +67,9 @@ export default function AdminCmsPage() {
         const data = await heroRes.json();
         if (data.success && data.data) {
           setHeroHeading(data.data.heading || '');
-          setHeroSubheading(data.data.subheading || '');
-          setCtaText(data.data.ctaText || '');
-          setCtaUrl(data.data.ctaUrl || '');
+          setHeroSubheading(data.data.subheading || data.data.description || '');
+          setCtaText(data.data.ctaText || data.data.cta1Text || '');
+          setCtaUrl(data.data.ctaUrl || data.data.cta1Url || '');
         }
       }
 
@@ -111,6 +117,7 @@ export default function AdminCmsPage() {
         body: JSON.stringify({
           heading: heroHeading,
           subheading: heroSubheading,
+          description: heroSubheading,
           ctaText,
           ctaUrl,
         }),
@@ -118,7 +125,7 @@ export default function AdminCmsPage() {
 
       const data = await res.json();
       if (data.success) {
-        showToast('Homepage Hero content saved successfully in MySQL!', 'success');
+        showToast('Homepage Hero content saved in MySQL database!', 'success');
       } else {
         showToast(data.message || 'Failed to update hero content', 'error');
       }
@@ -163,16 +170,16 @@ export default function AdminCmsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Content Management (CMS)</h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Website Content Management System (CMS)</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#74189B]/10 text-[#74189B]">
-              Real-time MySQL
+              Real-time MySQL Control
             </span>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage static legal pages, homepage hero text, promotional banners, and announcement bars dynamically.
+          <p className="text-xs text-slate-500 mt-1">
+            Complete administrative control over SheeshaTonight.com — homepage, banners, pages, navigation, media, and blogs.
           </p>
         </div>
 
@@ -186,133 +193,223 @@ export default function AdminCmsPage() {
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
           <Link
-            href="/admin/cms/pages"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 transition shadow-xs"
+            href="/?preview=true"
+            target="_blank"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-xs"
           >
-            <FileText size={15} className="text-[#74189B]" />
-            Manage Pages
+            <Eye size={15} className="text-[#74189B]" />
+            Preview Website
           </Link>
           <Link
-            href="/admin/cms/banners"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#74189B] text-white hover:bg-[#571275] transition shadow-md shadow-purple-900/10"
+            href="/admin/cms/homepage"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-[#74189B] to-[#571275] text-white hover:brightness-110 transition shadow-md shadow-purple-900/10"
           >
-            <ImageIcon size={15} className="text-[#F1A51D]" />
-            Manage Banners
+            <Layers size={15} className="text-[#F1A51D]" />
+            Homepage Builder
           </Link>
         </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* Central CMS Control Grid (8 Modules) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
-          href="/admin/cms/pages"
-          className="group block p-5 rounded-2xl bg-white border border-slate-100 shadow-xs hover:shadow-md hover:border-[#74189B]/30 transition-all relative overflow-hidden"
+          href="/admin/cms/homepage"
+          className="group block p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#74189B]/40 transition-all relative"
         >
           <div className="flex items-start justify-between">
-            <div className="w-11 h-11 rounded-xl bg-purple-50 text-[#74189B] flex items-center justify-center font-bold">
-              <FileText size={22} />
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-[#74189B] flex items-center justify-center font-bold">
+              <Layers size={20} />
             </div>
-            <ArrowUpRight size={18} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            <ArrowUpRight size={17} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </div>
           <div className="mt-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Content Pages</p>
-            <p className="text-2xl font-black text-slate-900 mt-1">
-              {pageCount !== null ? `${pageCount} Pages` : '...'}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">About Us, Contact, Privacy Policy, Terms & FAQ</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Builder</p>
+            <p className="text-base font-black text-slate-900 mt-0.5">Homepage Builder</p>
+            <p className="text-xs text-slate-500 mt-1">Hero, section order, visibility, and statistics</p>
           </div>
         </Link>
 
         <Link
           href="/admin/cms/banners"
-          className="group block p-5 rounded-2xl bg-white border border-slate-100 shadow-xs hover:shadow-md hover:border-[#74189B]/30 transition-all relative overflow-hidden"
+          className="group block p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#74189B]/40 transition-all relative"
         >
           <div className="flex items-start justify-between">
-            <div className="w-11 h-11 rounded-xl bg-amber-50 text-[#F1A51D] flex items-center justify-center font-bold">
-              <ImageIcon size={22} />
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#F1A51D] flex items-center justify-center font-bold">
+              <ImageIcon size={20} />
             </div>
-            <ArrowUpRight size={18} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            <ArrowUpRight size={17} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </div>
           <div className="mt-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Promotional Banners</p>
-            <p className="text-2xl font-black text-slate-900 mt-1">
-              {bannerCount !== null ? `${bannerCount} Banners` : '...'}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">Homepage hero carousel, sidebar deals & sale ribbons</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Campaigns</p>
+            <p className="text-base font-black text-slate-900 mt-0.5">Banner Management</p>
+            <p className="text-xs text-slate-500 mt-1">{bannerCount !== null ? `${bannerCount} Active Banners` : 'Hero & promo ribbons'}</p>
           </div>
         </Link>
 
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-[#74189B] to-[#571275] text-white shadow-md relative overflow-hidden">
+        <Link
+          href="/admin/cms/pages"
+          className="group block p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#74189B]/40 transition-all relative"
+        >
           <div className="flex items-start justify-between">
-            <div className="w-11 h-11 rounded-xl bg-white/10 text-[#F1A51D] flex items-center justify-center font-bold">
-              <Sparkles size={22} />
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <FileText size={20} />
             </div>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">Live Store</span>
+            <ArrowUpRight size={17} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </div>
           <div className="mt-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-purple-200">Customer Frontend</p>
-            <p className="text-lg font-black text-white mt-1">Direct MySQL Synchronization</p>
-            <p className="text-xs text-purple-200 mt-1">Changes reflect instantly without frontend rebuild</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Content</p>
+            <p className="text-base font-black text-slate-900 mt-0.5">Page Builder</p>
+            <p className="text-xs text-slate-500 mt-1">{pageCount !== null ? `${pageCount} Published Pages` : 'About, Terms, Privacy'}</p>
           </div>
-        </div>
+        </Link>
+
+        <Link
+          href="/admin/cms/navigation"
+          className="group block p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#74189B]/40 transition-all relative"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <Compass size={20} />
+            </div>
+            <ArrowUpRight size={17} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </div>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Structure</p>
+            <p className="text-base font-black text-slate-900 mt-0.5">Navigation & Footer</p>
+            <p className="text-xs text-slate-500 mt-1">Header menus, footer columns, social links</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/media"
+          className="group block p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#74189B]/40 transition-all relative"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+              <FolderOpen size={20} />
+            </div>
+            <ArrowUpRight size={17} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </div>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Assets</p>
+            <p className="text-base font-black text-slate-900 mt-0.5">Media Library</p>
+            <p className="text-xs text-slate-500 mt-1">Upload, search & safe reference deletion</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/cms/faqs"
+          className="group block p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#74189B]/40 transition-all relative"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+              <HelpCircle size={20} />
+            </div>
+            <ArrowUpRight size={17} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </div>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Support</p>
+            <p className="text-base font-black text-slate-900 mt-0.5">FAQs Management</p>
+            <p className="text-xs text-slate-500 mt-1">Questions, answers, and category ordering</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/cms/blogs"
+          className="group block p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#74189B]/40 transition-all relative"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+              <BookOpen size={20} />
+            </div>
+            <ArrowUpRight size={17} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </div>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Editorial</p>
+            <p className="text-base font-black text-slate-900 mt-0.5">Blog & Articles</p>
+            <p className="text-xs text-slate-500 mt-1">Publish news, lounge guides & shisha culture</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/admin/seo"
+          className="group block p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#74189B]/40 transition-all relative"
+        >
+          <div className="flex items-start justify-between">
+            <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold">
+              <Globe size={20} />
+            </div>
+            <ArrowUpRight size={17} className="text-slate-400 group-hover:text-[#74189B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </div>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Marketing</p>
+            <p className="text-base font-black text-slate-900 mt-0.5">SEO & Meta Management</p>
+            <p className="text-xs text-slate-500 mt-1">Open Graph, Schema JSON-LD & sitemaps</p>
+          </div>
+        </Link>
       </div>
 
-      {/* Content Form Sections */}
+      {/* Quick Action Forms */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Homepage Hero Section Form */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 space-y-5">
-          <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-            <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#74189B] flex items-center justify-center">
-              <Sliders size={18} />
+        {/* Quick Hero Customizer */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#74189B] flex items-center justify-center">
+                <Sliders size={18} />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Quick Homepage Hero Editor</h2>
+                <p className="text-[11px] text-slate-500">Instant update for headline and primary call to action</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Homepage Hero Text & CTA</h2>
-              <p className="text-xs text-slate-500">Key: <code className="font-mono text-[#74189B] font-semibold">homepage_hero</code></p>
-            </div>
+            <Link href="/admin/cms/homepage" className="text-xs font-bold text-[#74189B] hover:underline flex items-center gap-1">
+              Full Builder →
+            </Link>
           </div>
 
-          <form onSubmit={handleSaveHero} className="space-y-4">
+          <form onSubmit={handleSaveHero} className="space-y-3 text-xs">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Hero Headline / Title</label>
+              <label className="block font-bold text-slate-700 mb-1">Hero Title</label>
               <input
                 type="text"
                 placeholder="e.g. Premium Sheesha Delivered to Your Doorstep"
                 value={heroHeading}
                 onChange={(e) => setHeroHeading(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-900 font-bold focus:border-[#74189B] outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Hero Subheading / Tagline</label>
+              <label className="block font-bold text-slate-700 mb-1">Hero Description</label>
               <textarea
-                placeholder="e.g. Experience Dubai's finest artisanal sheeshas and rental packages tailored for your private gatherings."
+                placeholder="Subheading description..."
                 value={heroSubheading}
                 onChange={(e) => setHeroSubheading(e.target.value)}
-                rows={3}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
+                rows={2}
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-800 focus:border-[#74189B] outline-none"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Primary Button Text</label>
+                <label className="block font-bold text-slate-700 mb-1">CTA Text</label>
                 <input
                   type="text"
-                  placeholder="e.g. Book Now"
+                  placeholder="e.g. Explore Rentals"
                   value={ctaText}
                   onChange={(e) => setCtaText(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-900 focus:border-[#74189B] outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Primary Button URL</label>
+                <label className="block font-bold text-slate-700 mb-1">CTA URL</label>
                 <input
                   type="text"
-                  placeholder="e.g. /shop or /rentals"
+                  placeholder="e.g. /rentals"
                   value={ctaUrl}
                   onChange={(e) => setCtaUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-900 focus:border-[#74189B] outline-none"
                 />
               </div>
             </div>
@@ -331,37 +428,37 @@ export default function AdminCmsPage() {
         </div>
 
         {/* Global Announcement Bar Form */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 space-y-5">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
           <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
             <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#F1A51D] flex items-center justify-center">
               <Megaphone size={18} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">Top Announcement Ribbon</h2>
-              <p className="text-xs text-slate-500">Key: <code className="font-mono text-[#74189B] font-semibold">announcement_bar</code></p>
+              <h2 className="text-base font-bold text-slate-900">Storefront Announcement Bar</h2>
+              <p className="text-[11px] text-slate-500">Visible above the header across all customer pages</p>
             </div>
           </div>
 
-          <form onSubmit={handleSaveAnnouncement} className="space-y-4">
+          <form onSubmit={handleSaveAnnouncement} className="space-y-3 text-xs">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Announcement Message</label>
+              <label className="block font-bold text-slate-700 mb-1">Announcement Message</label>
               <input
                 type="text"
-                placeholder="e.g. Free UAE Delivery for orders above AED 250! Use code LUXE25"
+                placeholder="e.g. Free UAE Delivery for orders above AED 250!"
                 value={announcementText}
                 onChange={(e) => setAnnouncementText(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-900 font-medium focus:border-[#74189B] outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Clickable Destination URL (Optional)</label>
+              <label className="block font-bold text-slate-700 mb-1">Destination URL (Optional)</label>
               <input
                 type="text"
-                placeholder="e.g. /shop?promo=luxe25"
+                placeholder="e.g. /shop"
                 value={announcementLink}
                 onChange={(e) => setAnnouncementLink(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-900 focus:border-[#74189B] outline-none"
               />
             </div>
 
@@ -373,7 +470,7 @@ export default function AdminCmsPage() {
                   onChange={(e) => setAnnouncementEnabled(e.target.checked)}
                   className="w-4 h-4 rounded text-[#74189B] focus:ring-[#74189B] border-slate-300"
                 />
-                <span className="text-xs font-bold text-slate-700">Display this announcement bar on customer site</span>
+                <span className="font-bold text-slate-700">Display this announcement bar on customer site</span>
               </label>
             </div>
 

@@ -25,6 +25,8 @@ model User {
   kycApprovedAt   DateTime?
   kycRejectedAt   DateTime?
   status          UserStatus @default(ACTIVE)
+  adminRole       String?    @default("SUPER_ADMIN")
+  adminPermissions Json?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -127,12 +129,22 @@ model Product {
   description String?
   type        ProductType
   price       Decimal  @db.Decimal(10, 2)
+  compareAtPrice Decimal? @db.Decimal(10, 2)
+  rentalHourlyPrice Decimal? @db.Decimal(10, 2)
+  rentalDurationHours Int?
+  securityDeposit Decimal? @db.Decimal(10, 2)
+  deliveryCharge Decimal? @db.Decimal(10, 2)
+  equipmentDetails String? @db.Text
+  accessoriesIncluded String? @db.Text
+  rentalTerms String? @db.Text
   currency    String   @default("AED")
   stock       Int      @default(0)
   images      Json?    // JSON array of image URLs
   sku         String?  @unique
   isActive    Boolean  @default(true)
   isFeatured  Boolean  @default(false)
+  seoTitle    String?
+  seoDescription String?
   approvedAt  DateTime?
   rejectedAt  DateTime?
   deletedAt   DateTime?
@@ -179,6 +191,8 @@ model Order {
   rentalEndDate   DateTime?
   deliveryDate    DateTime?
   pickupDate      DateTime?
+  rentalReturnStatus String? @default("PENDING") // PENDING, RETURNED, INSPECTED, DAMAGED
+  securityDepositRefunded Boolean @default(false)
   notes           String?
   acceptedAt      DateTime?
   cancelledAt     DateTime?
@@ -364,9 +378,13 @@ model Category {
   slug        String   @unique
   description String?
   image       String?
+  icon        String?
+  parentId    String?
   isActive    Boolean  @default(true)
   isFeatured  Boolean  @default(false)
   sortOrder   Int      @default(0)
+  seoTitle    String?
+  seoDescription String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -395,6 +413,7 @@ model Review {
   rating    Int      @default(5)
   comment   String?
   status    String   @default("APPROVED")
+  isFeatured Boolean @default(false)
   createdAt DateTime @default(now())
 
   @@index([userId])
@@ -426,6 +445,8 @@ model CmsPage {
   content        String   @db.Text
   seoTitle       String?
   seoDescription String?
+  ogImage        String?
+  canonicalUrl   String?
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

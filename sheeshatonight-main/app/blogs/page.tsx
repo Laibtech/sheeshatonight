@@ -1,161 +1,109 @@
 'use client';
 
-import { Calendar, User, ArrowRight, Clock } from 'lucide-react';
-import { useState } from 'react';
+import { Calendar, User, ArrowRight, Clock, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
+interface BlogPost {
+  slug: string;
+  title: string;
+  excerpt: string;
+  image?: string;
+  author: string;
+  date: string;
+  category: string;
+  readTime: string;
+  published?: boolean;
+}
+
+const defaultBlogs: BlogPost[] = [
+  {
+    slug: 'best-shisha-flavors-2026',
+    title: 'Top 10 Best Shisha Flavors to Try in 2026',
+    excerpt: 'Discover the most popular and trending shisha flavors that will elevate your smoking experience this year in the UAE.',
+    image: '/blog.webp',
+    author: 'Ahmed Hassan',
+    date: 'June 10, 2026',
+    category: 'Flavors',
+    readTime: '5 min read',
+  },
+  {
+    slug: 'villa-party-setup-guide',
+    title: 'Complete Guide to Hosting the Perfect Villa Party with Shisha',
+    excerpt: 'Learn expert tips and tricks for organizing an unforgettable villa party with luxury shisha catering.',
+    image: '/Categories/Rentals.webp',
+    author: 'Sara Ali',
+    date: 'June 8, 2026',
+    category: 'Events',
+    readTime: '8 min read',
+  },
+  {
+    slug: 'yacht-party-shisha-guide',
+    title: 'Yacht Party Shisha Rental: Everything You Need to Know',
+    excerpt: 'Planning a yacht party? Here is your complete guide to booking and enjoying shisha on a yacht in Dubai marina.',
+    image: '/yacht.png',
+    author: 'Omar Mansoor',
+    date: 'June 3, 2026',
+    category: 'Events',
+    readTime: '7 min read',
+  },
+];
+
 export default function BlogsPage() {
-  const [showAccountMenu, setShowAccountMenu] = useState(false);
-
-  const blogs = [
-    {
-      slug: 'best-shisha-flavors-2026',
-      title: 'Top 10 Best Shisha Flavors to Try in 2026',
-      excerpt: 'Discover the most popular and trending shisha flavors that will elevate your smoking experience this year.',
-      image: '/blog.webp',
-      author: 'Ahmed Hassan',
-      date: 'June 10, 2026',
-      category: 'Flavors',
-      readTime: '5 min read'
-    },
-    // {
-    //   slug: 'villa-party-setup-guide',
-    //   title: 'Complete Guide to Hosting the Perfect Villa Party with Shisha',
-    //   excerpt: 'Learn expert tips and tricks for organizing an unforgettable villa party with premium shisha setup.',
-    //   image: '/blog.webp',
-    //   author: 'Sara Ali',
-    //   date: 'June 8, 2026',
-    //   category: 'Events',
-    //   readTime: '8 min read'
-    // },
-    // {
-    //   slug: 'shisha-health-facts',
-    //   title: 'Understanding Shisha: Health Facts You Should Know',
-    //   excerpt: 'An informative guide about responsible shisha smoking and what you need to know about health considerations.',
-    //   image: '/blog.webp',
-    //   author: 'Dr. Khalid Rahman',
-    //   date: 'June 5, 2026',
-    //   category: 'Health',
-    //   readTime: '6 min read'
-    // },
-    // {
-    //   slug: 'yacht-party-shisha-guide',
-    //   title: 'Yacht Party Shisha Rental: Everything You Need to Know',
-    //   excerpt: 'Planning a yacht party? Here\'s your complete guide to booking and enjoying shisha on a yacht in Dubai.',
-    //   image: '/blog.webp',
-    //   author: 'Omar Mansoor',
-    //   date: 'June 3, 2026',
-    //   category: 'Events',
-    //   readTime: '7 min read'
-    // },
-    // {
-    //   slug: 'premium-vs-regular-shisha',
-    //   title: 'Premium vs Regular Shisha: What\'s the Difference?',
-    //   excerpt: 'Understand the key differences between premium and regular shisha setups and why quality matters.',
-    //   image: '/blog.webp',
-    //   author: 'Ahmed Hassan',
-    //   date: 'May 30, 2026',
-    //   category: 'Guide',
-    //   readTime: '4 min read'
-    // },
-    // {
-    //   slug: 'wedding-shisha-setup',
-    //   title: 'Adding Shisha to Your Wedding: A Modern Touch',
-    //   excerpt: 'Learn how to incorporate luxury shisha rental into your wedding celebration for a memorable experience.',
-    //   image: '/blog.webp',
-    //   author: 'Layla Ahmed',
-    //   date: 'May 28, 2026',
-    //   category: 'Weddings',
-    //   readTime: '6 min read'
-    // },
-    // {
-    //   slug: 'home-shisha-etiquette',
-    //   title: 'Shisha Etiquette at Home: Do’s and Don’ts for Guests',
-    //   excerpt: 'A practical guide to hosting and enjoying shisha at home while keeping guests comfortable and happy.',
-    //   image: '/blog.webp',
-    //   author: 'Nadia Karim',
-    //   date: 'May 25, 2026',
-    //   category: 'Lifestyle',
-    //   readTime: '5 min read'
-    // },
-    // {
-    //   slug: 'best-sheesha-accessories',
-    //   title: 'Must-Have Shisha Accessories for a Premium Experience',
-    //   excerpt: 'Explore the essential shisha accessories that make every session smoother, safer, and more luxurious.',
-    //   image: '/blog.webp',
-    //   author: 'Yasir Malik',
-    //   date: 'May 22, 2026',
-    //   category: 'Guide',
-    //   readTime: '6 min read'
-    // },
-    // {
-    //   slug: 'sheesha-vs-hookah',
-    //   title: 'Shisha vs Hookah: What’s the Real Difference?',
-    //   excerpt: 'Learn the distinctions between shisha and hookah, and find out which setup fits your event best.',
-    //   image: '/blog.webp',
-    //   author: 'Mona Saleh',
-    //   date: 'May 18, 2026',
-    //   category: 'Guide',
-    //   readTime: '5 min read'
-    // },
-    // {
-    //   slug: 'seasonal-shisha-flavors',
-    //   title: 'Best Seasonal Shisha Flavors for Summer in the UAE',
-    //   excerpt: 'Discover cooling summer shisha flavor combinations that are perfect for rooftop nights and poolside gatherings.',
-    //   image: '/blog.webp',
-    //   author: 'Ahmed Hassan',
-    //   date: 'May 14, 2026',
-    //   category: 'Flavors',
-    //   readTime: '4 min read'
-    // },
-    // {
-    //   slug: 'corporate-event-shisha',
-    //   title: 'Corporate Events with Shisha: Professional and Stylish Setups',
-    //   excerpt: 'Tips for delivering polished shisha services at corporate events, networking nights, and branded gatherings.',
-    //   image: '/blog.webp',
-    //   author: 'Sana Rahman',
-    //   date: 'May 10, 2026',
-    //   category: 'Events',
-    //   readTime: '7 min read'
-    // }
-  ];
-
-  const categories = ['All', 'Flavors', 'Events', 'Health', 'Guide', 'Weddings'];
+  const [blogs, setBlogs] = useState<BlogPost[]>(defaultBlogs);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [loading, setLoading] = useState(false);
 
-  const filteredBlogs = selectedCategory === 'All' 
-    ? blogs 
-    : blogs.filter(blog => blog.category === selectedCategory);
+  useEffect(() => {
+    fetch('/api/blogs')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.success && Array.isArray(json.data) && json.data.length > 0) {
+          setBlogs(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const categories = ['All', ...Array.from(new Set(blogs.map((b) => b.category).filter(Boolean)))];
+
+  const filteredBlogs =
+    selectedCategory === 'All'
+      ? blogs
+      : blogs.filter((blog) => blog.category?.toLowerCase() === selectedCategory.toLowerCase());
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <Header />
 
       {/* Hero Section */}
-      <section className="site-page-hero">
-        <div className="container mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6">
-            Our <span className="text-[#D4AF37]">Blog</span>
+      <section className="bg-gradient-to-b from-purple-50/70 to-transparent py-16 border-b border-slate-100">
+        <div className="container mx-auto px-6 text-center max-w-4xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-100/80 text-[#74189B] text-xs font-bold uppercase tracking-wider mb-4">
+            <Sparkles size={14} /> SheeshaTonight Editorial
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
+            Our <span className="text-[#74189B]">Journal & Guides</span>
           </h1>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-            Tips, guides, and insights about shisha culture, events, and premium experiences
+          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Tips, guides, and insights about luxury shisha culture, exotic flavors, and premier event setups across Dubai and the UAE.
           </p>
         </div>
       </section>
 
       {/* Category Filter */}
-      <section className="py-8 bg-white border-b border-slate-200">
+      <section className="py-6 bg-white border-b border-slate-200">
         <div className="container mx-auto px-6">
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-2.5">
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-6 py-2 rounded-full font-medium transition ${
+                className={`px-5 py-2 rounded-full text-xs font-bold transition ${
                   selectedCategory === category
-                    ? 'bg-[#D4AF37] text-white'
+                    ? 'bg-[#74189B] text-white shadow-xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -168,59 +116,59 @@ export default function BlogsPage() {
 
       {/* Blog Grid */}
       <section className="py-16">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-6 max-w-6xl">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredBlogs.map((blog) => (
-              <article 
-                key={blog.slug} 
-                className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition group"
+              <article
+                key={blog.slug}
+                className="bg-white rounded-2xl overflow-hidden shadow-xs border border-slate-100 hover:shadow-lg transition group flex flex-col justify-between"
               >
-                <div className="h-48 overflow-hidden rounded-t-xl">
-                  <img
-                    src={blog.image}
-                    alt={blog.title}
-                    className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                </div>
-
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="px-3 py-1 bg-[#D4AF37]/10 text-[#D4AF37] rounded-full text-xs font-semibold">
-                      {blog.category}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-slate-500">
-                      <Clock className="w-3 h-3" />
-                      {blog.readTime}
+                <div>
+                  <div className="h-52 overflow-hidden bg-slate-100 relative">
+                    <img
+                      src={blog.image || '/blog.webp'}
+                      alt={blog.title}
+                      className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                    <span className="absolute top-3 left-3 px-3 py-1 bg-white/95 backdrop-blur-xs text-[#74189B] rounded-full text-[11px] font-bold shadow-xs">
+                      {blog.category || 'Guide'}
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-[#D4AF37] transition">
-                    {blog.title}
-                  </h3>
+                  <div className="p-6">
+                    <div className="flex items-center gap-1 text-xs text-slate-400 mb-2">
+                      <Clock className="w-3.5 h-3.5" />
+                      {blog.readTime || '5 min read'}
+                    </div>
 
-                  <p className="text-slate-600 text-sm mb-4 line-clamp-2">
-                    {blog.excerpt}
-                  </p>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-[#74189B] transition line-clamp-2">
+                      {blog.title}
+                    </h3>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        {blog.author}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {blog.date}
-                      </div>
+                    <p className="text-slate-600 text-xs sm:text-sm line-clamp-3 leading-relaxed">
+                      {blog.excerpt}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 pt-0 border-t border-slate-100/60 mt-4">
+                  <div className="flex items-center justify-between text-xs text-slate-500 py-3">
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <User className="w-3.5 h-3.5 text-[#74189B]" />
+                      {blog.author}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {blog.date}
                     </div>
                   </div>
 
-                  <Link 
+                  <Link
                     href={`/blogs/${blog.slug}`}
-                    className="mt-4 flex items-center gap-2 text-[#D4AF37] hover:text-[#B8902A] font-semibold text-sm group/link"
+                    className="flex items-center justify-between w-full py-2.5 px-4 rounded-xl bg-purple-50 text-[#74189B] hover:bg-[#74189B] hover:text-white font-bold text-xs transition"
                   >
-                    Read More
-                    <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition" />
+                    <span>Read Full Article</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </article>
@@ -230,20 +178,21 @@ export default function BlogsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-[#D4AF37] to-[#B8902A]">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to Book Your Shisha Setup?</h2>
-          <p className="text-xl text-white/90 mb-8">Experience premium quality with professional service</p>
-          <Link 
+      <section className="py-16 bg-gradient-to-br from-[#74189B] to-[#571275]">
+        <div className="container mx-auto px-6 text-center text-white max-w-2xl">
+          <h2 className="text-3xl font-extrabold mb-3">Ready to Book Your Shisha Setup?</h2>
+          <p className="text-base text-white/80 mb-6">
+            Experience premium hand-crafted German & Russian hookahs with professional white-glove sommeliers.
+          </p>
+          <Link
             href="/rentals"
-            className="inline-block px-8 py-4 bg-white text-[#D4AF37] rounded-lg font-semibold hover:bg-slate-100 transition"
+            className="inline-block px-8 py-3.5 bg-[#F1A51D] text-[#2B043D] rounded-xl font-bold hover:brightness-110 transition shadow-lg"
           >
-            View Packages
+            Explore Rental Packages
           </Link>
         </div>
       </section>
 
-      {/* Unified Global Footer */}
       <Footer />
     </div>
   );

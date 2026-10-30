@@ -96,8 +96,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Package,
       subItems: [
         { title: 'All Products', href: '/admin/products' },
-        { title: 'Add Product', href: '/admin/products/new' },
+        { title: 'Rentals & Setups', href: '/admin/rentals' },
         { title: 'Categories', href: '/admin/categories' },
+        { title: 'Add Product', href: '/admin/products/new' },
         { title: 'Inventory', href: '/admin/products?stock=low' },
       ],
     },
@@ -133,12 +134,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'Content',
-      href: '/admin/cms/pages',
+      href: '/admin/cms',
       icon: FileText,
       subItems: [
-        { title: 'Pages', href: '/admin/cms/pages' },
-        { title: 'CMS Content', href: '/admin/cms' },
-        { title: 'Homepage Banners', href: '/admin/cms/banners' },
+        { title: 'CMS Control Hub', href: '/admin/cms' },
+        { title: 'Homepage Builder', href: '/admin/cms/homepage' },
+        { title: 'Banner Manager', href: '/admin/cms/banners' },
+        { title: 'Page Builder', href: '/admin/cms/pages' },
+        { title: 'Navigation & Footer', href: '/admin/cms/navigation' },
+        { title: 'Media Library', href: '/admin/media' },
+        { title: 'FAQs Manager', href: '/admin/cms/faqs' },
+        { title: 'Blog Articles', href: '/admin/cms/blogs' },
         { title: 'SEO & Meta', href: '/admin/seo' },
       ],
     },
@@ -172,6 +178,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Settings',
       href: '/admin/settings',
       icon: Settings,
+      subItems: [
+        { title: 'Platform Settings', href: '/admin/settings' },
+        { title: 'Staff Roles & Admins', href: '/admin/admin-users' },
+      ],
     },
   ], [pendingCounts.orders, pendingCounts.vendors, pendingCounts.notifications]);
 
