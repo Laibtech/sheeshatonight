@@ -234,7 +234,7 @@ function LoginContent() {
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={() => handleQuickLogin('admin@sheeshatonight.com', 'admin123', 'ADMIN')}
+                  onClick={() => handleQuickLogin('admin@sheeshatonight.com', 'Password123!', 'ADMIN')}
                   className="py-2 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs disabled:opacity-60 cursor-pointer"
                   title="Super Admin: Click for instant 1-click login"
                 >
