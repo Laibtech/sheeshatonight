@@ -80,7 +80,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Orders',
       href: '/admin/orders',
       icon: ShoppingBag,
-      badge: pendingCounts.orders,
       subItems: [
         { title: 'All Orders', href: '/admin/orders' },
         { title: 'Pending', href: '/admin/orders?status=PREPARING' },
@@ -106,7 +105,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Vendors',
       href: '/admin/vendors',
       icon: Store,
-      badge: pendingCounts.vendors,
       subItems: [
         { title: 'All Vendors', href: '/admin/vendors' },
         { title: 'Pending Vendors', href: '/admin/vendors?status=pending' },
@@ -183,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { title: 'Staff Roles & Admins', href: '/admin/admin-users' },
       ],
     },
-  ], [pendingCounts.orders, pendingCounts.vendors, pendingCounts.notifications]);
+  ], [pendingCounts.notifications]);
 
   // Compute the single best matching active href across the navigation
   const activeHref = React.useMemo(() => {
