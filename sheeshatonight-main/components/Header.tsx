@@ -41,8 +41,7 @@ export default function Header() {
   const { wishlistCount } = useWishlist();
   const { isLoggedIn, userRole } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [shopOpen, setShopOpen] = useState(false);
-  const [rentalsOpen, setRentalsOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<'shop' | 'rentals' | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Dynamic CMS States
@@ -59,7 +58,7 @@ export default function Header() {
     { id: "1", label: "HOME", href: "/", order: 1, enabled: true },
     { id: "2", label: "SHOP", href: "/shop", order: 2, enabled: true },
     { id: "3", label: "RENTALS", href: "/rentals", order: 3, enabled: true },
-    { id: "4", label: "EXPERIENCES", href: "/rentals?event=villa", order: 4, enabled: true },
+    { id: "4", label: "EXPERIENCES", href: "/experiences", order: 4, enabled: true },
     { id: "5", label: "VENDORS", href: "/vendors", order: 5, enabled: true },
     { id: "6", label: "ABOUT US", href: "/about", order: 6, enabled: true },
     { id: "7", label: "CONTACT US", href: "/contact", order: 7, enabled: true },
@@ -193,8 +192,9 @@ export default function Header() {
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-7">
               {navItems.map((item) => {
-                const isShop = item.label.toUpperCase() === "SHOP" || item.href.startsWith("/shop");
-                const isRentals = item.label.toUpperCase() === "RENTALS" || item.href.startsWith("/rentals");
+                const normalizedLabel = item.label.trim().toUpperCase();
+                const isShop = normalizedLabel === "SHOP";
+                const isRentals = normalizedLabel === "RENTALS";
                 const isActive = checkIsActive(item.href);
 
                 // Shop Dropdown
@@ -203,8 +203,8 @@ export default function Header() {
                     <div
                       key={item.id}
                       className="relative"
-                      onMouseEnter={() => setShopOpen(true)}
-                      onMouseLeave={() => setShopOpen(false)}
+                      onMouseEnter={() => setActiveDropdown('shop')}
+                      onMouseLeave={() => setActiveDropdown(null)}
                     >
                       <Link
                         href={item.href}
@@ -214,7 +214,7 @@ export default function Header() {
                         <ChevronDown size={14} />
                       </Link>
 
-                      {shopOpen && (
+                      {activeDropdown === 'shop' && (
                         <div className="absolute left-1/2 -translate-x-1/2 top-full pt-4">
                           <div className="w-[700px] bg-white rounded-2xl border border-gray-100 shadow-[0_20px_60px_rgba(0,0,0,.12)] p-7">
                             <div className="grid grid-cols-3 gap-8">
@@ -320,8 +320,8 @@ export default function Header() {
                     <div
                       key={item.id}
                       className="relative"
-                      onMouseEnter={() => setRentalsOpen(true)}
-                      onMouseLeave={() => setRentalsOpen(false)}
+                      onMouseEnter={() => setActiveDropdown('rentals')}
+                      onMouseLeave={() => setActiveDropdown(null)}
                     >
                       <Link
                         href={item.href}
@@ -331,7 +331,7 @@ export default function Header() {
                         <ChevronDown size={14} />
                       </Link>
 
-                      {rentalsOpen && (
+                      {activeDropdown === 'rentals' && (
                         <div className="absolute left-1/2 -translate-x-1/2 top-full pt-4">
                           <div className="w-[650px] bg-white rounded-2xl border border-gray-100 shadow-[0_20px_60px_rgba(0,0,0,.12)] p-7">
                             <div className="grid grid-cols-2 gap-8">
