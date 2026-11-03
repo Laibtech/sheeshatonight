@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, Loader2, Eye, EyeOff, ShieldCheck, ArrowRight, Sparkles, Shield, Store, User } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { setSessionCookie } from '@/lib/session';
 
@@ -18,14 +18,12 @@ function LoginContent() {
   const [error, setError] = useState('');
   const [requestedRole, setRequestedRole] = useState<string | null>(null);
 
-  const [quickLoadingRole, setQuickLoadingRole] = useState<string | null>(null);
-
   useEffect(() => {
     const role = searchParams?.get('role');
     setRequestedRole(role);
   }, [searchParams]);
 
-  const performLogin = async (loginEmail: string, loginPass: string, targetRole?: string) => {
+  const performLogin = async (loginEmail: string, loginPass: string) => {
     setError('');
 
     const normalizedEmail = loginEmail.trim().toLowerCase();
@@ -33,13 +31,11 @@ function LoginContent() {
 
     if (!normalizedEmail) {
       setError('Please enter your email address.');
-      setQuickLoadingRole(null);
       return;
     }
 
     if (!trimmedPassword) {
       setError('Please enter your password.');
-      setQuickLoadingRole(null);
       return;
     }
 
@@ -64,7 +60,6 @@ function LoginContent() {
           setError(data.error || 'Unable to log in. Please check your details and try again.');
         }
         setLoading(false);
-        setQuickLoadingRole(null);
         return;
       }
 
@@ -141,15 +136,7 @@ function LoginContent() {
       console.error('Login error:', err);
       setError('Unable to connect. Please check your backend server / internet connection.');
       setLoading(false);
-      setQuickLoadingRole(null);
     }
-  };
-
-  const handleQuickLogin = async (quickEmail: string, quickPass: string, roleName: string) => {
-    setEmail(quickEmail);
-    setPassword(quickPass);
-    setQuickLoadingRole(roleName);
-    await performLogin(quickEmail, quickPass, roleName);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -221,60 +208,6 @@ function LoginContent() {
                 </p>
               </div>
             )}
-
-            {/* Quick Demo Accounts Selection */}
-            <div className="mb-6 p-3.5 bg-gradient-to-r from-purple-50/80 to-amber-50/60 dark:from-purple-950/30 dark:to-amber-950/20 border border-purple-100/80 dark:border-purple-900/30 rounded-xl">
-              <div className="flex items-center gap-1.5 mb-2.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#8a277d] dark:text-[#f5b83d]" />
-                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                  Quick Demo Accounts
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => handleQuickLogin('admin@sheeshatonight.com', 'Password123!', 'ADMIN')}
-                  className="py-2 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs disabled:opacity-60 cursor-pointer"
-                  title="Super Admin: Click for instant 1-click login"
-                >
-                  {quickLoadingRole === 'ADMIN' ? (
-                    <Loader2 className="w-3.5 h-3.5 flex-shrink-0 animate-spin text-[#8a277d] dark:text-[#f5b83d]" />
-                  ) : (
-                    <Shield className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
-                  )}
-                  <span>{quickLoadingRole === 'ADMIN' ? 'Signing in...' : 'Admin'}</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => handleQuickLogin('vendor@sheeshatonight.com', 'vendor123', 'VENDOR')}
-                  className="py-2 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs disabled:opacity-60 cursor-pointer"
-                  title="Vendor: Click for instant 1-click login"
-                >
-                  {quickLoadingRole === 'VENDOR' ? (
-                    <Loader2 className="w-3.5 h-3.5 flex-shrink-0 animate-spin text-[#8a277d] dark:text-[#f5b83d]" />
-                  ) : (
-                    <Store className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
-                  )}
-                  <span>{quickLoadingRole === 'VENDOR' ? 'Signing in...' : 'Vendor'}</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => handleQuickLogin('customer@sheeshatonight.com', 'customer123', 'CUSTOMER')}
-                  className="py-2 px-2 bg-white dark:bg-[#1a1a26] hover:bg-purple-100/60 dark:hover:bg-purple-900/40 border border-purple-200/80 dark:border-purple-800/40 rounded-lg text-[11px] font-bold text-[#8a277d] dark:text-[#f5b83d] transition-all flex items-center justify-center gap-1.5 truncate shadow-2xs disabled:opacity-60 cursor-pointer"
-                  title="Customer: Click for instant 1-click login"
-                >
-                  {quickLoadingRole === 'CUSTOMER' ? (
-                    <Loader2 className="w-3.5 h-3.5 flex-shrink-0 animate-spin text-[#8a277d] dark:text-[#f5b83d]" />
-                  ) : (
-                    <User className="w-3.5 h-3.5 flex-shrink-0 text-[#8a277d] dark:text-[#f5b83d]" />
-                  )}
-                  <span>{quickLoadingRole === 'CUSTOMER' ? 'Signing in...' : 'Customer'}</span>
-                </button>
-              </div>
-            </div>
 
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Email Address */}

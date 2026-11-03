@@ -38,6 +38,7 @@ export default function CustomerDashboard() {
   const [customerName, setCustomerName] = useState("Customer");
   const [customerEmail, setCustomerEmail] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
+  const [addressCount, setAddressCount] = useState<number>(0);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
 
@@ -74,7 +75,7 @@ export default function CustomerDashboard() {
             name: item.title || item.name,
             price: `AED ${Number(item.price || 0).toFixed(0)}`,
             image: item.image || (Array.isArray(item.images) && item.images[0]) || "/SHEESHA-SET.webp",
-            reviews: String(Math.floor(Math.random() * 30) + 18),
+            reviews: item.reviewsCount ? `${item.reviewsCount} reviews` : "Verified",
           }));
           setProducts(mapped);
         }
@@ -82,11 +83,22 @@ export default function CustomerDashboard() {
       .catch(() => {});
   }, []);
 
-  // Load real orders from /api/orders
+  // Load real customer addresses and orders
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
+    // Real address count
+    fetch("/api/users/me/addresses", { headers, cache: "no-store", credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const payload = data?.data || data;
+        const list = Array.isArray(payload) ? payload : payload?.addresses || [];
+        setAddressCount(list.length);
+      })
+      .catch(() => setAddressCount(0));
+
+    // Real orders
     fetch("/api/orders", { headers, cache: "no-store", credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -152,7 +164,7 @@ export default function CustomerDashboard() {
           <StatCard
             icon={<MapPin size={18} />}
             title="Saved Addresses"
-            value="2"
+            value={String(addressCount)}
             link="Manage Addresses"
             href="/dashboard/settings"
           />
@@ -160,7 +172,7 @@ export default function CustomerDashboard() {
           <StatCard
             icon={<CreditCard size={18} />}
             title="Payment Methods"
-            value="1"
+            value="Cash & Card"
             link="Manage Payments"
             href="/dashboard/settings"
             gold

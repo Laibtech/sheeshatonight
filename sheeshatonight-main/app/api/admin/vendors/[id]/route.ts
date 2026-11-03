@@ -160,6 +160,30 @@ export async function POST(
             where: { id },
             data: { isActive: true },
           });
+          if (vendor.userId) {
+            await prisma.user.update({
+              where: { id: vendor.userId },
+              data: { kycStatus: 'APPROVED', verified: true },
+            });
+            await prisma.notification.create({
+              data: {
+                userId: vendor.userId,
+                type: 'SYSTEM',
+                title: 'Vendor Store Approved 🎉',
+                message: 'Your SheeshaTonight vendor application has been approved by admin. You can now access your full vendor dashboard, list products, and manage orders.',
+                read: false,
+              },
+            });
+          }
+          await prisma.auditLog.create({
+            data: {
+              userId: req.user?.userId || vendor.userId || 'system',
+              action: 'APPROVE_VENDOR',
+              resourceType: 'VENDOR',
+              resourceId: id,
+              afterState: JSON.stringify({ vendorId: id, isActive: true, kycStatus: 'APPROVED' }),
+            },
+          });
           break;
 
         case 'reject':
@@ -168,12 +192,68 @@ export async function POST(
             where: { id },
             data: { isActive: false },
           });
+          if (vendor.userId) {
+            await prisma.user.update({
+              where: { id: vendor.userId },
+              data: { kycStatus: 'REJECTED' },
+            });
+            await prisma.notification.create({
+              data: {
+                userId: vendor.userId,
+                type: 'ALERT',
+                title: 'Vendor Application Update',
+                message: body.reason || 'Your vendor application was reviewed and could not be approved at this time. Please update your business documentation and resubmit.',
+                read: false,
+              },
+            });
+          }
+          await prisma.auditLog.create({
+            data: {
+              userId: req.user?.userId || vendor.userId || 'system',
+              action: 'REJECT_VENDOR',
+              resourceType: 'VENDOR',
+              resourceId: id,
+              afterState: JSON.stringify({ vendorId: id, isActive: false, kycStatus: 'REJECTED', reason: body.reason }),
+            },
+          });
           break;
+
+        case 'request_info':
+          if (vendor.userId) {
+            await prisma.notification.create({
+              data: {
+                userId: vendor.userId,
+                type: 'ALERT',
+                title: 'Additional Information Required for Vendor Application',
+                message: body.reason || 'Administration requires additional information or updated trade license documentation to complete your store approval.',
+                read: false,
+              },
+            });
+          }
+          await prisma.auditLog.create({
+            data: {
+              userId: req.user?.userId || vendor.userId || 'system',
+              action: 'REQUEST_INFO_VENDOR',
+              resourceType: 'VENDOR',
+              resourceId: id,
+              afterState: JSON.stringify({ vendorId: id, requestedInfo: body.reason }),
+            },
+          });
+          return successResponse({ vendor }, 'Information request sent to vendor successfully');
 
         case 'delete':
           await prisma.vendor.update({
             where: { id },
             data: { isActive: false },
+          });
+          await prisma.auditLog.create({
+            data: {
+              userId: req.user?.userId || vendor.userId || 'system',
+              action: 'DEACTIVATE_VENDOR',
+              resourceType: 'VENDOR',
+              resourceId: id,
+              afterState: JSON.stringify({ vendorId: id, isActive: false }),
+            },
           });
           return successResponse(null, 'Vendor deactivated and deleted successfully');
 

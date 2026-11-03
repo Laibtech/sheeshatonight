@@ -7,11 +7,13 @@ export interface AuthenticatedRequest extends NextRequest {
     userId: string;
     email: string;
     role: string;
+    kycStatus?: string;
     vendorId?: string;
     vendor?: {
       id: string;
       name: string;
       slug: string;
+      isActive?: boolean;
     };
   };
 }
@@ -63,11 +65,13 @@ export function withAuth(handler: (req: AuthenticatedRequest, ...args: any[]) =>
             email: true,
             role: true,
             status: true,
+            kycStatus: true,
             vendor: {
               select: {
                 id: true,
                 name: true,
                 slug: true,
+                isActive: true,
               },
             },
           },
@@ -87,6 +91,7 @@ export function withAuth(handler: (req: AuthenticatedRequest, ...args: any[]) =>
           userId: dbUser.id,
           email: dbUser.email,
           role: dbUser.role,
+          kycStatus: dbUser.kycStatus,
           vendorId: dbUser.vendor?.id,
           vendor: dbUser.vendor || undefined,
         };
@@ -145,6 +150,29 @@ export function withVendor(handler: (req: AuthenticatedRequest, ...args: any[]) 
         { status: 403 }
       );
     }
+
+    // Role-specific enforcement: pending/rejected vendors cannot manage store
+    if (req.user?.role === 'VENDOR') {
+      if (req.user.kycStatus === 'PENDING') {
+        return NextResponse.json(
+          { error: 'Vendor account pending approval', status: 'PENDING' },
+          { status: 403 }
+        );
+      }
+      if (req.user.kycStatus === 'REJECTED') {
+        return NextResponse.json(
+          { error: 'Vendor application was rejected', status: 'REJECTED' },
+          { status: 403 }
+        );
+      }
+      if (req.user.vendor && req.user.vendor.isActive === false) {
+        return NextResponse.json(
+          { error: 'Vendor store is deactivated', status: 'INACTIVE' },
+          { status: 403 }
+        );
+      }
+    }
+
     return handler(req, ...args);
   });
 }

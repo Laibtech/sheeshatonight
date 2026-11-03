@@ -26,6 +26,8 @@ import {
   X,
   User,
   UserRound,
+  Store,
+  CreditCard,
 } from 'lucide-react';
 import '@/app/dashboard/CustomerDashboard.css';
 
@@ -356,6 +358,15 @@ export function CustomerPortalLayout({ children }: { children: React.ReactNode }
           </Link>
 
           <Link
+            href="/vendor-support"
+            onClick={() => setMobileSidebarOpen(false)}
+            className={pathname === '/vendor-support' ? 'active' : ''}
+          >
+            <span className="icon"><Store size={18} /></span>
+            <span>Become a Vendor</span>
+          </Link>
+
+          <Link
             href="/contact"
             onClick={() => setMobileSidebarOpen(false)}
             className={pathname === '/contact' ? 'active' : ''}
@@ -430,6 +441,11 @@ export function CustomerPortalLayout({ children }: { children: React.ReactNode }
             <Link href="/dashboard/settings" className={isNavActive('/dashboard/settings') ? 'active' : ''}>
               <span className="icon"><Settings size={17} /></span>
               Settings
+            </Link>
+
+            <Link href="/vendor-support" className={pathname === '/vendor-support' ? 'active' : ''}>
+              <span className="icon"><Store size={17} /></span>
+              Become a Vendor
             </Link>
 
             <Link href="/contact" className={pathname === '/contact' ? 'active' : ''}>
