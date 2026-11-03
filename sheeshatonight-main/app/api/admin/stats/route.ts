@@ -26,6 +26,7 @@ export const GET = withAdmin(async (req: AuthenticatedRequest) => {
       pendingReviews,
       revenueData,
       recentOrders,
+      unreadNotifications,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.vendor.count(),
@@ -73,6 +74,7 @@ export const GET = withAdmin(async (req: AuthenticatedRequest) => {
         orderBy: { createdAt: 'desc' },
         take: 8,
       }),
+      prisma.notification.count({ where: { read: false } }),
     ]);
 
     const totalRevenue = revenueData._sum.totalAmount
@@ -97,6 +99,7 @@ export const GET = withAdmin(async (req: AuthenticatedRequest) => {
       lowStockCount: lowStockProducts,
       pendingReviews,
       activeProducts,
+      unreadNotifications,
       averageOrderValue: totalOrders > 0 ? Math.round((totalRevenue / totalOrders) * 100) / 100 : 0,
     };
 

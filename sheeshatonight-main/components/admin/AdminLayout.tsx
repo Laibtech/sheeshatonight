@@ -35,6 +35,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             setPendingCounts({
               orders: stats.pendingOrders || 0,
               vendors: stats.pendingVendors || 0,
+              notifications: stats.unreadNotifications || 0,
             });
           }
         }

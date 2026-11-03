@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Bell, 
   Send, 
   CheckCheck, 
   Check, 
-  Filter, 
   Clock, 
   ShieldAlert, 
   ShoppingBag, 
@@ -15,7 +14,10 @@ import {
   Plus, 
   RefreshCw,
   X,
-  Loader2
+  Loader2,
+  Trash2,
+  RotateCcw,
+  Search
 } from 'lucide-react';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { TableSkeleton } from '@/components/admin/LoadingSkeleton';
@@ -32,14 +34,28 @@ interface NotificationItem {
   createdAt: string;
 }
 
+interface NotificationCounts {
+  all: number;
+  unread: number;
+  read: number;
+}
+
 export default function AdminNotificationsPage() {
   const { showToast } = useToast();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'UNREAD' | 'READ'>('ALL');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [filteredTotal, setFilteredTotal] = useState(0);
+
+  // Global persistent notification counts from the database
+  const [counts, setCounts] = useState<NotificationCounts>({
+    all: 0,
+    unread: 0,
+    read: 0,
+  });
 
   // Send Broadcast / Notification Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,21 +64,20 @@ export default function AdminNotificationsPage() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [page, filter]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async (activeFilter = filter, activePage = page, activeSearch = search) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
       const params = new URLSearchParams({
-        page: page.toString(),
+        page: activePage.toString(),
         pageSize: '15',
       });
-      if (filter === 'UNREAD') params.append('read', 'false');
-      if (filter === 'READ') params.append('read', 'true');
+
+      if (activeFilter === 'UNREAD') params.append('read', 'false');
+      if (activeFilter === 'READ') params.append('read', 'true');
+      if (activeSearch.trim()) params.append('search', activeSearch.trim());
 
       const res = await fetch(`/api/admin/notifications?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -72,7 +87,16 @@ export default function AdminNotificationsPage() {
       if (data.success) {
         setNotifications(data.data || []);
         setTotalPages(data.pagination?.totalPages || 1);
-        setTotal(data.pagination?.total || 0);
+        setFilteredTotal(data.pagination?.total || 0);
+
+        // ALWAYS maintain and update the true complete database counts
+        if (data.counts) {
+          setCounts({
+            all: Number(data.counts.all) || 0,
+            unread: Number(data.counts.unread) || 0,
+            read: Number(data.counts.read) || 0,
+          });
+        }
       } else {
         showToast(data.message || 'Failed to load notifications', 'error');
       }
@@ -82,29 +106,59 @@ export default function AdminNotificationsPage() {
     } finally {
       setLoading(false);
     }
+  }, [filter, page, search, showToast]);
+
+  useEffect(() => {
+    fetchNotifications(filter, page, search);
+  }, [filter, page]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    fetchNotifications(filter, 1, search);
   };
 
-  const handleMarkAsRead = async (id: string) => {
+  const handleToggleRead = async (id: string, currentReadState: boolean) => {
     try {
+      setActionLoadingId(id);
       const token = localStorage.getItem('auth_token');
+      const targetRead = !currentReadState;
+
       const res = await fetch('/api/admin/notifications', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, read: targetRead }),
       });
 
       const data = await res.json();
       if (data.success) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+        if (data.counts) {
+          setCounts(data.counts);
+        } else {
+          setCounts((prev) => ({
+            all: prev.all,
+            unread: targetRead ? Math.max(0, prev.unread - 1) : prev.unread + 1,
+            read: targetRead ? prev.read + 1 : Math.max(0, prev.read - 1),
+          }));
+        }
+
+        showToast(
+          targetRead ? 'Notification marked as read' : 'Notification marked as unread',
+          'success'
         );
-        showToast('Notification marked as read', 'success');
+
+        // Refresh current list so tabs filter correctly
+        fetchNotifications(filter, page, search);
+      } else {
+        showToast(data.message || 'Failed to update notification', 'error');
       }
     } catch (err) {
       showToast('Failed to update notification', 'error');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -122,11 +176,53 @@ export default function AdminNotificationsPage() {
 
       const data = await res.json();
       if (data.success) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        if (data.counts) {
+          setCounts(data.counts);
+        } else {
+          setCounts((prev) => ({
+            all: prev.all,
+            unread: 0,
+            read: prev.all,
+          }));
+        }
+
         showToast('All notifications marked as read', 'success');
+        fetchNotifications(filter, 1, search);
+      } else {
+        showToast(data.message || 'Failed to mark all as read', 'error');
       }
     } catch (err) {
       showToast('Failed to mark all as read', 'error');
+    }
+  };
+
+  const handleDeleteNotification = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this notification record?')) {
+      return;
+    }
+
+    try {
+      setActionLoadingId(id);
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`/api/admin/notifications?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        if (data.counts) {
+          setCounts(data.counts);
+        }
+        showToast('Notification deleted successfully', 'success');
+        fetchNotifications(filter, page, search);
+      } else {
+        showToast(data.message || 'Failed to delete notification', 'error');
+      }
+    } catch (err) {
+      showToast('Failed to delete notification', 'error');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -141,7 +237,7 @@ export default function AdminNotificationsPage() {
       setSending(true);
       const token = localStorage.getItem('auth_token');
 
-      // First fetch an admin or active user ID to associate the system notification with
+      // Fetch user ID to associate system notification
       const userRes = await fetch('/api/admin/customers?pageSize=1', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -149,7 +245,7 @@ export default function AdminNotificationsPage() {
       const fallbackUserId = userData?.data?.[0]?.id;
 
       if (!fallbackUserId) {
-        showToast('No user found to deliver notification', 'error');
+        showToast('No user record found to anchor notification', 'error');
         return;
       }
 
@@ -170,11 +266,16 @@ export default function AdminNotificationsPage() {
 
       const data = await res.json();
       if (data.success) {
-        showToast('System notification created and broadcast successfully!', 'success');
+        showToast('System announcement broadcast successfully!', 'success');
         setIsModalOpen(false);
         setTitle('');
         setMessage('');
-        fetchNotifications();
+
+        if (data.counts) {
+          setCounts(data.counts);
+        }
+
+        fetchNotifications(filter, 1, search);
       } else {
         showToast(data.message || 'Failed to broadcast notification', 'error');
       }
@@ -188,6 +289,7 @@ export default function AdminNotificationsPage() {
   const getTypeIcon = (nType: string) => {
     switch (nType.toUpperCase()) {
       case 'ORDER':
+      case 'ORDER_STATUS':
         return <ShoppingBag size={16} className="text-blue-600" />;
       case 'VENDOR':
         return <Store size={16} className="text-[#F1A51D]" />;
@@ -200,13 +302,13 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">System Notifications & Alerts</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#74189B]/10 text-[#74189B]">
-              {total} Total
+              {counts.all} Total
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
@@ -214,25 +316,26 @@ export default function AdminNotificationsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
-            onClick={fetchNotifications}
+            onClick={() => fetchNotifications(filter, page, search)}
             disabled={loading}
-            className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-xs disabled:opacity-50"
+            className="p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-xs disabled:opacity-50 cursor-pointer"
             title="Refresh notifications"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
           <button
             onClick={handleMarkAllRead}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-xs"
+            disabled={counts.unread === 0 || loading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-xs disabled:opacity-50 cursor-pointer"
           >
             <CheckCheck size={16} className="text-emerald-600" />
             Mark All Read
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#74189B] text-white hover:bg-[#571275] transition shadow-md shadow-purple-900/10"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[#74189B] text-white hover:bg-[#571275] transition shadow-md shadow-purple-900/10 cursor-pointer"
           >
             <Plus size={16} />
             Send Announcement
@@ -240,47 +343,115 @@ export default function AdminNotificationsPage() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-2 flex items-center gap-1 w-fit">
-        <button
-          onClick={() => {
-            setFilter('ALL');
-            setPage(1);
-          }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-            filter === 'ALL'
-              ? 'bg-[#74189B] text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          All ({total})
-        </button>
-        <button
-          onClick={() => {
-            setFilter('UNREAD');
-            setPage(1);
-          }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-            filter === 'UNREAD'
-              ? 'bg-[#74189B] text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          Unread
-        </button>
-        <button
-          onClick={() => {
-            setFilter('READ');
-            setPage(1);
-          }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-            filter === 'READ'
-              ? 'bg-[#74189B] text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          Read
-        </button>
+      {/* Filter Tabs & Quick Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Persistent Tab Counters (All, Unread, Read) */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-1.5 flex items-center gap-1.5 w-fit">
+          <button
+            type="button"
+            onClick={() => {
+              if (filter !== 'ALL') {
+                setFilter('ALL');
+                setPage(1);
+              }
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer select-none ${
+              filter === 'ALL'
+                ? 'bg-[#74189B] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>All</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                filter === 'ALL'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {counts.all}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (filter !== 'UNREAD') {
+                setFilter('UNREAD');
+                setPage(1);
+              }
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer select-none ${
+              filter === 'UNREAD'
+                ? 'bg-[#74189B] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>Unread</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                filter === 'UNREAD'
+                  ? 'bg-white/20 text-white'
+                  : counts.unread > 0
+                  ? 'bg-[#F1A51D] text-white'
+                  : 'bg-slate-100 text-slate-500'
+              }`}
+            >
+              {counts.unread}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (filter !== 'READ') {
+                setFilter('READ');
+                setPage(1);
+              }
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer select-none ${
+              filter === 'READ'
+                ? 'bg-[#74189B] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>Read</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                filter === 'READ'
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {counts.read}
+            </span>
+          </button>
+        </div>
+
+        {/* Search bar */}
+        <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-64">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search alerts..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch('');
+                setPage(1);
+                fetchNotifications(filter, 1, '');
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </form>
       </div>
 
       {/* Notifications List */}
@@ -294,7 +465,9 @@ export default function AdminNotificationsPage() {
             title="No notifications recorded"
             description={
               filter === 'UNREAD'
-                ? "You're all caught up! There are no unread system alerts."
+                ? "You're all caught up! There are no unread system alerts in the database."
+                : filter === 'READ'
+                ? 'No read notifications found. Mark an unread notification to see it archived here.'
                 : 'No platform notifications or alerts have been generated in the database yet.'
             }
             actionLabel="Send Announcement"
@@ -324,7 +497,7 @@ export default function AdminNotificationsPage() {
                       {n.type}
                     </span>
                     {!n.read && (
-                      <span className="w-2 h-2 rounded-full bg-[#74189B] shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-[#74189B] shrink-0" title="Unread" />
                     )}
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">{n.message}</p>
@@ -334,15 +507,36 @@ export default function AdminNotificationsPage() {
                   </div>
                 </div>
 
-                {!n.read && (
+                {/* Actions */}
+                <div className="flex items-center gap-1 shrink-0">
                   <button
-                    onClick={() => handleMarkAsRead(n.id)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition shrink-0"
-                    title="Mark as read"
+                    onClick={() => handleToggleRead(n.id, n.read)}
+                    disabled={actionLoadingId === n.id}
+                    className={`p-2 rounded-lg transition ${
+                      !n.read
+                        ? 'text-slate-400 hover:text-emerald-700 hover:bg-emerald-50'
+                        : 'text-slate-400 hover:text-purple-700 hover:bg-purple-50'
+                    }`}
+                    title={n.read ? 'Mark as unread' : 'Mark as read'}
                   >
-                    <Check size={16} />
+                    {actionLoadingId === n.id ? (
+                      <Loader2 size={16} className="animate-spin text-slate-400" />
+                    ) : n.read ? (
+                      <RotateCcw size={15} />
+                    ) : (
+                      <Check size={16} />
+                    )}
                   </button>
-                )}
+
+                  <button
+                    onClick={() => handleDeleteNotification(n.id)}
+                    disabled={actionLoadingId === n.id}
+                    className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                    title="Delete notification"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -352,20 +546,20 @@ export default function AdminNotificationsPage() {
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>
-              Page {page} of {totalPages}
+              Showing Page {page} of {totalPages} ({filteredTotal} matching)
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 font-bold"
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 font-bold cursor-pointer"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 font-bold"
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-50 font-bold cursor-pointer"
               >
                 Next
               </button>
@@ -456,8 +650,17 @@ export default function AdminNotificationsPage() {
                   disabled={sending}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs bg-[#74189B] text-white hover:bg-[#571275] transition shadow-md shadow-purple-900/10 disabled:opacity-50"
                 >
-                  {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                  Send Notification
+                  {sending ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Broadcasting...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      Broadcast Now
+                    </>
+                  )}
                 </button>
               </div>
             </form>
