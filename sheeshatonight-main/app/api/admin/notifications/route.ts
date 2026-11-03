@@ -170,29 +170,122 @@ export const DELETE = withAdmin(async (req: AuthenticatedRequest) => {
 
 /**
  * POST /api/admin/notifications
- * Create notification (Admin only) and return updated complete database counts
+ * Broadcast or create database-backed notifications with target audience filtering
+ * Supports: ALL, VENDORS, CUSTOMERS, ADMINS, or specific user/email
  */
 export const POST = withAdmin(async (req: AuthenticatedRequest) => {
   try {
     const body = await req.json();
-    const { userId, type, title, message, data } = body;
+    const { userId, targetEmail, targetRole, type, title, message, data } = body;
 
-    if (!userId || !title || !message) {
-      return errorResponse('Missing required fields: userId, title, message', 400);
+    const trimmedTitle = (title || '').trim();
+    const trimmedMessage = (message || '').trim();
+
+    if (!trimmedTitle || !trimmedMessage) {
+      return errorResponse('Missing required fields: title and message are required', 400);
     }
 
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        type: type || 'SYSTEM',
-        title,
-        message,
-        read: false,
-        data: data ? (typeof data === 'string' ? data : JSON.stringify(data)) : null,
+    // 1. Duplicate Prevention: Check if exact announcement was dispatched within the last 2 minutes
+    const recentDuplicate = await prisma.notification.findFirst({
+      where: {
+        title: trimmedTitle,
+        message: trimmedMessage,
+        createdAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
       },
     });
 
-    // Always fetch fresh authoritative counts from database
+    if (recentDuplicate) {
+      return errorResponse(
+        'Duplicate announcement detected. A notification with this title and content was already sent within the last 2 minutes.',
+        409
+      );
+    }
+
+    // 2. Resolve Target User IDs based on Audience Role or Specific User
+    let targetUserIds: string[] = [];
+
+    if (targetEmail) {
+      const targetUser = await prisma.user.findFirst({
+        where: { email: targetEmail.trim().toLowerCase() },
+        select: { id: true },
+      });
+      if (!targetUser) {
+        return errorResponse(`Target user with email "${targetEmail}" was not found`, 404);
+      }
+      targetUserIds = [targetUser.id];
+    } else if (userId) {
+      targetUserIds = [userId];
+    } else if (targetRole === 'VENDORS') {
+      const vendorUsers = await prisma.user.findMany({
+        where: { role: 'VENDOR' },
+        select: { id: true },
+      });
+      targetUserIds = vendorUsers.map((u) => u.id);
+    } else if (targetRole === 'CUSTOMERS') {
+      const customerUsers = await prisma.user.findMany({
+        where: { role: 'CUSTOMER' },
+        select: { id: true },
+      });
+      targetUserIds = customerUsers.map((u) => u.id);
+    } else if (targetRole === 'ADMINS') {
+      const adminUsers = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true },
+      });
+      targetUserIds = adminUsers.map((u) => u.id);
+    } else {
+      // Default: ALL marketplace users
+      const allUsers = await prisma.user.findMany({
+        select: { id: true },
+      });
+      targetUserIds = allUsers.map((u) => u.id);
+    }
+
+    if (targetUserIds.length === 0) {
+      return errorResponse('No recipient accounts matched the selected target audience', 400);
+    }
+
+    const broadcastPayload = {
+      targetRole: targetRole || (targetEmail ? 'SPECIFIC' : 'ALL'),
+      category: type || 'SYSTEM',
+      sentAt: new Date().toISOString(),
+      ...(data && typeof data === 'object' ? data : {}),
+    };
+
+    // 3. Batch insert notifications for all recipients in target audience
+    const notificationEntries = targetUserIds.map((uid) => ({
+      userId: uid,
+      type: type || 'SYSTEM',
+      title: trimmedTitle,
+      message: trimmedMessage,
+      read: false,
+      data: JSON.stringify(broadcastPayload),
+    }));
+
+    await prisma.notification.createMany({
+      data: notificationEntries,
+    });
+
+    // 4. Audit Log Entry for Real-Time Activity Monitoring
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: req.user?.userId || targetUserIds[0] || 'system',
+          action: 'BROADCAST_ANNOUNCEMENT',
+          resourceType: 'NOTIFICATION',
+          resourceId: `broadcast_${Date.now()}`,
+          afterState: JSON.stringify({
+            title: trimmedTitle,
+            targetRole: broadcastPayload.targetRole,
+            recipientsCount: targetUserIds.length,
+          }),
+        },
+      });
+    } catch {
+      // Non-blocking audit log
+    }
+
+    // 5. Fresh authoritative database counts
     const [totalAll, totalUnread, totalRead] = await Promise.all([
       prisma.notification.count(),
       prisma.notification.count({ where: { read: false } }),
@@ -202,8 +295,10 @@ export const POST = withAdmin(async (req: AuthenticatedRequest) => {
     return NextResponse.json(
       {
         success: true,
-        message: 'Notification created successfully',
-        data: { notification },
+        message: `Announcement broadcast successfully to ${targetUserIds.length} recipient${
+          targetUserIds.length === 1 ? '' : 's'
+        }`,
+        recipientsCount: targetUserIds.length,
         counts: {
           all: totalAll,
           unread: totalUnread,

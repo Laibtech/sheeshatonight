@@ -59,7 +59,8 @@ export default function AdminNotificationsPage() {
 
   // Send Broadcast / Notification Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [targetRole, setTargetRole] = useState<'ALL' | 'VENDORS' | 'CUSTOMERS'>('ALL');
+  const [targetRole, setTargetRole] = useState<'ALL' | 'VENDORS' | 'CUSTOMERS' | 'ADMINS' | 'SPECIFIC'>('ALL');
+  const [targetEmail, setTargetEmail] = useState('');
   const [type, setType] = useState('SYSTEM');
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
@@ -233,21 +234,14 @@ export default function AdminNotificationsPage() {
       return;
     }
 
+    if (targetRole === 'SPECIFIC' && !targetEmail.trim()) {
+      showToast('Please enter the recipient user email', 'error');
+      return;
+    }
+
     try {
       setSending(true);
       const token = localStorage.getItem('auth_token');
-
-      // Fetch user ID to associate system notification
-      const userRes = await fetch('/api/admin/customers?pageSize=1', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const userData = await userRes.json();
-      const fallbackUserId = userData?.data?.[0]?.id;
-
-      if (!fallbackUserId) {
-        showToast('No user record found to anchor notification', 'error');
-        return;
-      }
 
       const res = await fetch('/api/admin/notifications', {
         method: 'POST',
@@ -256,20 +250,21 @@ export default function AdminNotificationsPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          userId: fallbackUserId,
+          targetRole: targetRole !== 'SPECIFIC' ? targetRole : undefined,
+          targetEmail: targetRole === 'SPECIFIC' ? targetEmail.trim() : undefined,
           type,
-          title,
-          message,
-          data: { targetRole },
+          title: title.trim(),
+          message: message.trim(),
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        showToast('System announcement broadcast successfully!', 'success');
+        showToast(data.message || 'System announcement broadcast successfully!', 'success');
         setIsModalOpen(false);
         setTitle('');
         setMessage('');
+        setTargetEmail('');
 
         if (data.counts) {
           setCounts(data.counts);
@@ -277,7 +272,7 @@ export default function AdminNotificationsPage() {
 
         fetchNotifications(filter, 1, search);
       } else {
-        showToast(data.message || 'Failed to broadcast notification', 'error');
+        showToast(data.message || data.error || 'Failed to broadcast notification', 'error');
       }
     } catch (err) {
       showToast('Failed to broadcast notification', 'error');
@@ -593,11 +588,27 @@ export default function AdminNotificationsPage() {
                   onChange={(e) => setTargetRole(e.target.value as any)}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
                 >
-                  <option value="ALL">All Marketplace Users</option>
-                  <option value="VENDORS">Vendors Only</option>
+                  <option value="ALL">All Marketplace Users (Customers & Vendors)</option>
                   <option value="CUSTOMERS">Customers Only</option>
+                  <option value="VENDORS">Vendors Only</option>
+                  <option value="ADMINS">Admins & Staff Only</option>
+                  <option value="SPECIFIC">Specific User (by Email)</option>
                 </select>
               </div>
+
+              {targetRole === 'SPECIFIC' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Recipient Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="e.g. user@sheeshatonight.com"
+                    value={targetEmail}
+                    onChange={(e) => setTargetEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
+                    required
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Notification Category</label>
@@ -607,9 +618,10 @@ export default function AdminNotificationsPage() {
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#74189B]/20 focus:border-[#74189B]"
                 >
                   <option value="SYSTEM">System Announcement</option>
-                  <option value="ORDER">Order Update</option>
+                  <option value="ORDER">Order Update / Alert</option>
                   <option value="VENDOR">Vendor Alert</option>
                   <option value="SECURITY">Security Advisory</option>
+                  <option value="PROMO">Promotion / Special Offer</option>
                 </select>
               </div>
 

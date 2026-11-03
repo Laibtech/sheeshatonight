@@ -22,9 +22,6 @@ const nextConfig = {
   ],
   redirects: async () => [{ source: '/products', destination: '/shop', permanent: true }],
   headers: async () => {
-    if (process.env.NODE_ENV !== 'production') {
-      return [];
-    }
     return [
       {
         source: '/:path*',

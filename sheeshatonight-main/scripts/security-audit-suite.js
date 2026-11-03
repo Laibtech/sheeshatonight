@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const JWT_SECRET = process.env.JWT_SECRET || 'sheeshatonight_jwt_secret_key_2024_production_ready_min_32_chars_long';
 
 // Results tracking

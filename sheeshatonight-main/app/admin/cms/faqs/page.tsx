@@ -250,7 +250,7 @@ export default function AdminFaqsPage() {
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-md mx-auto space-y-3">
           <HelpCircle size={40} className="mx-auto text-slate-400" />
           <h3 className="font-bold text-slate-800 text-base">No questions found in this category</h3>
-          <p className="text-xs text-slate-500">Click "Add FAQ" to create your first question and answer.</p>
+          <p className="text-xs text-slate-500">Click &quot;Add FAQ&quot; to create your first question and answer.</p>
         </div>
       ) : (
         <div className="space-y-3">
