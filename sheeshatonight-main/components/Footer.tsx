@@ -166,7 +166,8 @@ export default function Footer() {
                 ) : (
                   <form
                     onSubmit={handleSubscribe}
-                    className="flex items-center bg-white rounded-2xl p-2 max-w-[540px] lg:ml-auto shadow-lg min-h-[58px] sm:min-h-[64px]"
+                    className="flex flex-row items-center bg-white rounded-2xl p-1.5 sm:p-2 max-w-[540px] w-full lg:ml-auto shadow-lg min-h-[58px] sm:min-h-[64px]"
+                    style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}
                   >
                     <input
                       type="email"
@@ -175,11 +176,11 @@ export default function Footer() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email address"
                       autoComplete="email"
-                      className="flex-1 min-w-0 px-4 sm:px-6 py-3 bg-transparent outline-none text-sm sm:text-base text-gray-800 placeholder-gray-400 font-medium"
+                      className="flex-1 min-w-0 px-3 sm:px-6 py-3 bg-transparent outline-none text-sm sm:text-base text-gray-800 placeholder-gray-400 font-medium"
                     />
                     <button
                       type="submit"
-                      className="bg-[#F1A51D] hover:bg-[#d99010] text-white px-6 sm:px-9 py-3 sm:py-3.5 rounded-xl text-sm sm:text-base font-bold transition shadow-sm hover:shadow-md shrink-0 flex items-center gap-1.5"
+                      className="bg-[#F1A51D] hover:bg-[#d99010] text-white px-5 sm:px-9 py-2.5 sm:py-3.5 rounded-xl text-sm sm:text-base font-bold transition shadow-sm hover:shadow-md shrink-0 flex items-center justify-center gap-1.5"
                     >
                       <span>Subscribe</span>
                       <Send size={15} />

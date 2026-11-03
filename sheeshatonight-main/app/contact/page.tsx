@@ -649,7 +649,7 @@ export default function ContactPage() {
           font-size: 14px;
         }
 
-        form {
+        .form-card form {
           display: flex;
           flex-direction: column;
           gap: 19px;
