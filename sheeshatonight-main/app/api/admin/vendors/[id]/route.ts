@@ -241,21 +241,14 @@ export async function POST(
           });
           return successResponse({ vendor }, 'Information request sent to vendor successfully');
 
-        case 'delete':
-          await prisma.vendor.update({
-            where: { id },
-            data: { isActive: false },
-          });
-          await prisma.auditLog.create({
-            data: {
-              userId: req.user?.userId || vendor.userId || 'system',
-              action: 'DEACTIVATE_VENDOR',
-              resourceType: 'VENDOR',
-              resourceId: id,
-              afterState: JSON.stringify({ vendorId: id, isActive: false }),
-            },
-          });
-          return successResponse(null, 'Vendor deactivated and deleted successfully');
+        case 'delete': {
+          const force = Boolean(body.force);
+          const result = await deleteVendorRecord(id, force, req.user?.userId || 'admin');
+          if (!result.success) {
+            return NextResponse.json(result, { status: result.status || 400 });
+          }
+          return successResponse(result.data, result.message);
+        }
 
         default:
           return errorResponse(`Unknown action: ${action}`, 400);
@@ -267,6 +260,122 @@ export async function POST(
       return errorResponse(error.message || 'Failed to perform vendor action', 500);
     }
   })(request);
+}
+
+/**
+ * DELETE /api/admin/vendors/[id]
+ * Permanently delete or cascade delete a vendor store
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  const { id } = await params;
+  return withAdmin(async (req: AuthenticatedRequest) => {
+    try {
+      const { searchParams } = new URL(req.url);
+      const force = searchParams.get('force') === 'true';
+
+      const result = await deleteVendorRecord(id, force, req.user?.userId || 'admin');
+
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 400 });
+      }
+
+      return successResponse(result.data, result.message);
+    } catch (error: any) {
+      console.error('Delete vendor error:', error);
+      return errorResponse(error.message || 'Failed to delete vendor', 500);
+    }
+  })(request);
+}
+
+/**
+ * Helper to delete a vendor and clean up related records safely
+ */
+async function deleteVendorRecord(id: string, force: boolean, adminUserId: string) {
+  const vendor = await prisma.vendor.findUnique({
+    where: { id },
+    include: {
+      user: true,
+      orders: { select: { id: true, orderNumber: true } },
+      products: { select: { id: true } },
+      documents: { select: { id: true } },
+      settlements: { select: { id: true } },
+    },
+  });
+
+  if (!vendor) {
+    return { success: false, error: 'Vendor not found', status: 404 };
+  }
+
+  const orderIds = vendor.orders.map((o) => o.id);
+  const productIds = vendor.products.map((p) => p.id);
+
+  if (orderIds.length > 0 && !force) {
+    return {
+      success: false,
+      error: `Vendor "${vendor.name}" has ${orderIds.length} existing order(s). Pass force=true to delete with historical orders.`,
+      status: 400,
+      requiresForce: true,
+      ordersCount: orderIds.length,
+      vendorName: vendor.name,
+    };
+  }
+
+  // 1. If force and orders exist, clean up order dependencies
+  if (orderIds.length > 0) {
+    await prisma.invoice.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.orderTracking.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+  }
+
+  // 2. Clean up product dependencies (Cart, Wishlist, OrderItems)
+  if (productIds.length > 0) {
+    await prisma.cart.deleteMany({ where: { productId: { in: productIds } } });
+    await prisma.wishlist.deleteMany({ where: { productId: { in: productIds } } });
+    await prisma.orderItem.deleteMany({ where: { productId: { in: productIds } } });
+    await prisma.product.deleteMany({ where: { vendorId: id } });
+  }
+
+  // 3. Clean up documents and settlements
+  await prisma.vendorDocument.deleteMany({ where: { vendorId: id } });
+  await prisma.settlement.deleteMany({ where: { vendorId: id } });
+
+  // 4. Delete the Vendor record
+  await prisma.vendor.delete({ where: { id } });
+
+  // 5. Update user: demote role to CUSTOMER, reset kycStatus
+  if (vendor.userId) {
+    await prisma.user.update({
+      where: { id: vendor.userId },
+      data: { role: 'CUSTOMER', kycStatus: 'REJECTED' },
+    });
+  }
+
+  // 6. Record Audit Log
+  await prisma.auditLog.create({
+    data: {
+      userId: adminUserId || 'admin',
+      action: 'DELETE_VENDOR',
+      resourceType: 'VENDOR',
+      resourceId: id,
+      afterState: JSON.stringify({
+        deletedVendorName: vendor.name,
+        deletedVendorSlug: vendor.slug,
+        ownerEmail: vendor.user?.email,
+        ordersRemoved: orderIds.length,
+        productsRemoved: productIds.length,
+      }),
+    },
+  });
+
+  return {
+    success: true,
+    message: `Vendor "${vendor.name}" has been permanently deleted successfully.`,
+    data: { id, name: vendor.name },
+  };
 }
 
 export const PATCH = PUT;

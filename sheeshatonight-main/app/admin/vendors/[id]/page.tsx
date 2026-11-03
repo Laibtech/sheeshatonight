@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Store,
@@ -17,8 +17,10 @@ import {
   Loader2,
   DollarSign,
   AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/admin/StatusBadge';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
 import { useToast } from '@/components/admin/Toast';
 
 interface VendorDetailData {
@@ -84,10 +86,14 @@ export default function AdminVendorDetailPage({
   const unwrapped = params ? ('then' in params ? React.use(params) : params) : null;
   const vendorId = (routeParams?.id as string) || unwrapped?.id || '';
 
+  const router = useRouter();
   const { addToast } = useToast();
   const [vendor, setVendor] = useState<VendorDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [forceDelete, setForceDelete] = useState(false);
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'documents' | 'settlements'>('products');
 
   const fetchVendor = async () => {
@@ -148,6 +154,45 @@ export default function AdminVendorDetailPage({
       console.error('Error toggling vendor status:', err);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleDeleteVendor = async (force = false) => {
+    if (!vendor || !vendorId) return;
+    try {
+      setDeleteLoading(true);
+      const token = localStorage.getItem('auth_token');
+      const url = `/api/admin/vendors/${vendorId}${force ? '?force=true' : ''}`;
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      if (res.ok && data.success !== false) {
+        addToast({
+          type: 'success',
+          title: 'Vendor Deleted',
+          message: data.message || `Vendor "${vendor.name}" was successfully deleted.`,
+        });
+        setShowDeleteModal(false);
+        router.push('/admin/vendors');
+      } else if (data.requiresForce) {
+        setForceDelete(true);
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Delete Failed',
+          message: data.error || data.message || 'Failed to delete vendor',
+        });
+      }
+    } catch (err: any) {
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: err.message || 'Network error occurred while deleting vendor',
+      });
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -238,18 +283,33 @@ export default function AdminVendorDetailPage({
           </div>
         </div>
 
-        <button
-          onClick={handleToggleStatus}
-          disabled={actionLoading}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-2 ${
-            vendor.isActive
-              ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
-              : 'bg-emerald-600 text-white hover:bg-emerald-700'
-          }`}
-        >
-          {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-          <span>{vendor.isActive ? 'Suspend Vendor' : 'Approve & Activate'}</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => {
+              setShowDeleteModal(true);
+              setForceDelete(false);
+            }}
+            disabled={actionLoading || deleteLoading}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+            title="Delete Vendor"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Delete Vendor</span>
+          </button>
+
+          <button
+            onClick={handleToggleStatus}
+            disabled={actionLoading || deleteLoading}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-2 ${
+              vendor.isActive
+                ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                : 'bg-emerald-600 text-white hover:bg-emerald-700'
+            }`}
+          >
+            {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>{vendor.isActive ? 'Suspend Vendor' : 'Approve & Activate'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -534,6 +594,28 @@ export default function AdminVendorDetailPage({
             </table>
           )}
         </div>
+      )}
+
+      {/* Delete Vendor Confirmation Modal */}
+      {showDeleteModal && (
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setForceDelete(false);
+          }}
+          onConfirm={() => handleDeleteVendor(forceDelete)}
+          title={forceDelete ? 'Warning: Vendor Has Active Orders' : 'Delete Vendor Store'}
+          message={
+            forceDelete
+              ? `Vendor "${vendor.name}" has ${vendor.orders?.length || 'existing'} order(s). Confirming permanent deletion will completely remove this vendor along with all associated historical order records and products. Are you sure you wish to proceed?`
+              : `Are you sure you want to permanently delete vendor "${vendor.name}"? This will remove the store profile, unpublish catalog items, and demote the account.`
+          }
+          confirmLabel={forceDelete ? 'Force Delete Vendor' : 'Delete Vendor'}
+          cancelText="Cancel"
+          isDanger={true}
+          loading={deleteLoading}
+        />
       )}
     </div>
   );

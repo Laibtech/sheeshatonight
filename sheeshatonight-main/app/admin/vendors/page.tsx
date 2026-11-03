@@ -3,9 +3,11 @@
 import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Store, Eye, CheckCircle2, XCircle, ShieldCheck, FileText } from 'lucide-react';
+import { Store, Eye, CheckCircle2, XCircle, ShieldCheck, FileText, Trash2 } from 'lucide-react';
 import { DataTable, Column } from '@/components/admin/DataTable';
 import { StatusBadge } from '@/components/admin/StatusBadge';
+import { ConfirmModal } from '@/components/admin/ConfirmModal';
+import { useToast } from '@/components/admin/Toast';
 
 interface VendorRecord {
   id: string;
@@ -30,6 +32,7 @@ interface VendorRecord {
 function VendorsContent() {
   const searchParams = useSearchParams();
   const statusParam = searchParams.get('status');
+  const { addToast } = useToast();
 
   const [vendors, setVendors] = useState<VendorRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +44,10 @@ function VendorsContent() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalVendors, setTotalVendors] = useState(0);
+
+  const [deleteTarget, setDeleteTarget] = useState<VendorRecord | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [forceDelete, setForceDelete] = useState(false);
 
   const fetchVendors = useCallback(async () => {
     try {
@@ -94,6 +101,46 @@ function VendorsContent() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     }).format(amount);
+  };
+
+  const handleDeleteVendor = async (force = false) => {
+    if (!deleteTarget) return;
+    try {
+      setDeleteLoading(true);
+      const token = localStorage.getItem('auth_token');
+      const url = `/api/admin/vendors/${deleteTarget.id}${force ? '?force=true' : ''}`;
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      if (res.ok && data.success !== false) {
+        addToast({
+          type: 'success',
+          title: 'Vendor Deleted',
+          message: data.message || `Vendor "${deleteTarget.name}" was successfully deleted.`,
+        });
+        setDeleteTarget(null);
+        setForceDelete(false);
+        fetchVendors();
+      } else if (data.requiresForce) {
+        setForceDelete(true);
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Delete Failed',
+          message: data.error || data.message || 'Failed to delete vendor',
+        });
+      }
+    } catch (err: any) {
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: err.message || 'Network error occurred while deleting vendor',
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const columns: Column<VendorRecord>[] = [
@@ -159,14 +206,26 @@ function VendorsContent() {
       header: 'Actions',
       className: 'text-right',
       cell: (row) => (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-1.5">
           <Link
             href={`/admin/vendors/${row.id}`}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#FAF8FB] hover:bg-[#74189B] text-[#74189B] hover:text-white border border-[#E9E3EB] text-xs font-bold transition shadow-xs"
+            title="Manage Vendor"
           >
             <Eye className="w-3.5 h-3.5" />
             <span>Manage</span>
           </Link>
+
+          <button
+            onClick={() => {
+              setDeleteTarget(row);
+              setForceDelete(false);
+            }}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition"
+            title="Delete Vendor"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       ),
     },
@@ -247,6 +306,28 @@ function VendorsContent() {
         totalItems={totalVendors}
         onPageChange={setPage}
       />
+
+      {/* Delete Vendor Confirmation Modal */}
+      {deleteTarget && (
+        <ConfirmModal
+          isOpen={!!deleteTarget}
+          onClose={() => {
+            setDeleteTarget(null);
+            setForceDelete(false);
+          }}
+          onConfirm={() => handleDeleteVendor(forceDelete)}
+          title={forceDelete ? 'Warning: Vendor Has Active Orders' : 'Delete Vendor Store'}
+          message={
+            forceDelete
+              ? `Vendor "${deleteTarget.name}" has ${deleteTarget.ordersCount || 'existing'} order(s). Confirming permanent deletion will completely remove this vendor along with all associated historical order records and products. Are you sure you wish to proceed?`
+              : `Are you sure you want to permanently delete vendor "${deleteTarget.name}"? This will remove the store profile, unpublish catalog items, and demote the account.`
+          }
+          confirmLabel={forceDelete ? 'Force Delete Vendor' : 'Delete Vendor'}
+          cancelText="Cancel"
+          isDanger={true}
+          loading={deleteLoading}
+        />
+      )}
     </div>
   );
 }
